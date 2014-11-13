@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include "edvs.h"
 #include "eDVSGL.h"
 #include <OVR.h>
@@ -6,6 +7,7 @@
 #include <OVR_CAPI_GL.h>
 #include "shader.hpp"
 #include "ParameterManager.h"
+
 
 #define EXPERIMENT_MODE true
 #define I_THINK_THIS_IS_BULLSHIT true
@@ -24,17 +26,11 @@ ovrFovPort eyeFov[2];
 ovrGLTexture eyeTexture[2];
 ovrEyeRenderDesc eyeRenderDesc[2];
 
-// new comment
-
-
-
-
-
 const size_t num_max_events = 1024;
-unsigned long lastRendering;
+double initTime = glfwGetTime();
+int nbFrames = 0;
 
 ParameterManager paramManager;
-
 
 /************************Modes supported***************************
  0: read from device, no recording
@@ -274,7 +270,7 @@ int Initialize(ovrHmd *hmd,int *mode, GLFWwindow **window, ovrHmdDesc *hmdDesc, 
 	clientSize.h = hmdDesc->Resolution.h;
 
 	// Open a window and create its OpenGL context
-	*window = glfwCreateWindow(clientSize.w, clientSize.h, "eDVS", NULL, NULL);
+	*window = glfwCreateWindow(clientSize.w, clientSize.h, "eDVS: FPS=0", NULL, NULL);
 	if (window == NULL) {
 		fprintf( stderr,
 				"Failed to open GLFW window. Make sure your graphic card supports OpenGL 3.3+. \n");
@@ -459,8 +455,31 @@ int Initialize(ovrHmd *hmd,int *mode, GLFWwindow **window, ovrHmdDesc *hmdDesc, 
 	return 1;
 }
 
+	/* Measure FPS
+	 * FPS target in ms: 1000ms/FPS
+	 * 60FPS = 16.666667ms ## 75 FPS = 13.333333ms, etc.
+	 */
+	void measureFPS() {
+		double currentTime = glfwGetTime();
+		nbFrames++;
+
+		if ( currentTime - initTime >= 1.0 ) {
+			// must convert to const char* for glfwSetWindowTitle
+			double d = (double)1000.0/double(nbFrames);
+			std::stringstream ss;
+			ss << d;
+			const char* str = ss.str().c_str();
+
+			glfwSetWindowTitle(window, str);
+
+			// counter zero, count until next second is finished
+			nbFrames = 0;
+			initTime += 1.0;
+		}
+	}
 
 int main(void) {
+
 	GLuint VertexArrayID;
 	GLuint vertexbuffer;
 	GLuint programID;
@@ -471,23 +490,10 @@ int main(void) {
 	Initialize(&hmd, &mode, &window,&hmdDesc,&eDVS1,&eDVS2,&FBOId, eyeTexture,
 			&programID, &MatrixID,&vertexbuffer,&VertexArrayID,&paramManager);
 
-
 	//Rendering Loop
 	do {
-		unsigned long currTime = getTime();
-		unsigned long timePassed = currTime - lastRendering;
-		bool oncePrinted = false;
 
-		while (timePassed < paramManager.getDisplayInterval()) {
-			timePassed = currTime - lastRendering;
-			if(!oncePrinted){
-			printf("inside loop\n");
-			oncePrinted = true;
-			}
-		}
-
-		lastRendering = currTime;
-		//printf("time passed before: %u\n", timePassed);
+		measureFPS();
 
 		// Activate keyboard controlling
 		kControl();
