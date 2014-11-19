@@ -479,7 +479,7 @@ int Initialize(ovrHmd *hmd,int *mode, GLFWwindow **window, ovrHmdDesc *hmdDesc, 
 	}
 
 int main(void) {
-
+	//git
 	GLuint VertexArrayID;
 	GLuint vertexbuffer;
 	GLuint programID;
