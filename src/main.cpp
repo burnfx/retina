@@ -7,12 +7,23 @@
 #include <OVR_CAPI_GL.h>
 #include "shader.hpp"
 #include "ParameterManager.h"
+#include "DataManager.h"
+#include <string.h>
+#include <stdio.h>
 
-
+// Defines
+//*********************************************************************
 #define EXPERIMENT_MODE true
-#define I_THINK_THIS_IS_BULLSHIT true
+#define OCULUS_DK_VERSION_DEBUG 2
+#define DEFAULT_EDVSDATA_LEFT_FILENAME "edvsdata/edvs_left.txt"
+#define DEFAULT_EDVSDATA_RIGHT_FILENAME "edvsdata/edvs_right.txt"
 #define DEFAULT_MODE 2
-
+#define MODE_INDICATOR "-mode"
+#define FILENAME_INDICATOR"-filename"
+#define EDVS_DATA_FOLDER_NAME "edvsdata/"
+#define FILENAME_EXTENSION_RIGHT "_right.txt"
+#define FILENAME_EXTENSION_LEFT "_left.txt"
+//**********************************************************************
 
 eDVSGL eDVS1;
 eDVSGL eDVS2;
@@ -31,6 +42,7 @@ double initTime = glfwGetTime();
 int nbFrames = 0;
 
 ParameterManager paramManager;
+DataManager *dataManager;
 
 /************************Modes supported***************************
  0: read from device, no recording
@@ -63,9 +75,7 @@ void loadSettings() {
 	if (settings == NULL) {
 		printf("not able to open the file !\n");
 	}
-#ifndef I_THINK_THIS_IS_BULLSHIT
-	void writeEvents(FILE * file, glm::vec4 event);
-#endif
+
 	int temp_updateInterval;
 	float temp_translateBack_Offset;
 	float temp_Viewport_Offset;
@@ -197,8 +207,8 @@ void kControl() {
 	if ((glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS)) {
 		if (mode == 0 && mode != 1) {
 			mode = 1;
-			edvsLeft = fopen("edvsdata/edvs_left.txt", "w");GLuint FBOId;
-			edvsRight = fopen("edvsdata/edvs_right.txt", "w");
+			edvsLeft = fopen(DEFAULT_EDVSDATA_LEFT_FILENAME, "w");GLuint FBOId;
+			edvsRight = fopen(DEFAULT_EDVSDATA_RIGHT_FILENAME, "w");
 		}
 	}
 
@@ -213,22 +223,24 @@ void kControl() {
 
 int Initialize(ovrHmd *hmd,int *mode, GLFWwindow **window, ovrHmdDesc *hmdDesc, eDVSGL *eDVS1, eDVSGL *eDVS2,
 		GLuint *FBOId,ovrGLTexture *eyeTexture,GLuint *programID,GLuint *MatrixID,GLuint *vertexbuffer,
-		GLuint *VertexArrayID, ParameterManager *paramManager){
-	int nTries = 0;
-	printf("Please choose the mode: \n"
-			"0: Read from devices, no recording \n"
-			"1: Read from devices, recording \n"
-			"2: Read from files \n"
-			"3: Experiment - Not implemented yet \n"
-			"Mode:");
-	do{
-		scanf("%i", mode);
-		nTries += 1;
-	}while(!(*mode>=0 && *mode<=3 && nTries < 5));
+		GLuint *VertexArrayID, ParameterManager *paramManager, int initModeViaKeyboard){
+	if (initModeViaKeyboard){
+		int nTries = 0;
+		printf("Please choose the mode: \n"
+				"0: Read from devices, no recording \n"
+				"1: Read from devices, recording \n"
+				"2: Read from files \n"
+				"3: Experiment - Not implemented yet \n"
+				"Mode:");
+		do{
+			scanf("%i", mode);
+			nTries += 1;
+		}while(!(*mode>=0 && *mode<=3 && nTries < 5));
 
-	if(nTries >= 5){
-		*mode = DEFAULT_MODE;
-	}
+		if(nTries >= 5){
+			*mode = DEFAULT_MODE;
+		}
+	} //ELSE - mode must be initialized ELSEWHERE!
 
 	// Initializes LibOVR.
 	ovr_Initialize();
@@ -236,7 +248,11 @@ int Initialize(ovrHmd *hmd,int *mode, GLFWwindow **window, ovrHmdDesc *hmdDesc, 
 
 	if (!*hmd) {
 		// If we didn't detect an Hmd, create a simulated one for debugging.
-		*hmd = ovrHmd_CreateDebug(ovrHmd_DK1);
+		if (OCULUS_DK_VERSION_DEBUG == 2){
+			*hmd = ovrHmd_CreateDebug(ovrHmd_DK2);
+		} else{
+			*hmd = ovrHmd_CreateDebug(ovrHmd_DK1);
+		}
 		if (!*hmd) {   // Failed Hmd creation.
 			return 1;
 		}
@@ -245,10 +261,7 @@ int Initialize(ovrHmd *hmd,int *mode, GLFWwindow **window, ovrHmdDesc *hmdDesc, 
 	// Get more details about the HMD
 	ovrHmd_GetDesc(*hmd, hmdDesc);
 
-#ifndef I_THINK_THIS_IS_BULLSHIT
-	ovrBool ovrHmd_StartSensor(ovrHmd hmd, unsigned int supportedCaps,
-			unsigned int requiredCaps);
-#endif
+
 	// Start the sensor which provides the Rift’s pose and motion.
 	ovrHmd_StartSensor(*hmd,ovrSensorCap_Orientation |
 			ovrSensorCap_YawCorrection | ovrSensorCap_Position |
@@ -270,7 +283,18 @@ int Initialize(ovrHmd *hmd,int *mode, GLFWwindow **window, ovrHmdDesc *hmdDesc, 
 	clientSize.h = hmdDesc->Resolution.h;
 
 	// Open a window and create its OpenGL context
-	*window = glfwCreateWindow(clientSize.w, clientSize.h, "eDVS: FPS=0", NULL, NULL);
+	int count;
+	GLFWmonitor** monitors = glfwGetMonitors(&count);
+	GLFWmonitor *monitor;
+	if (count > 1){ // This means, there is a second monitor
+		monitor = monitors[count-1]; // this will make Fullscreen mode on last monitor. This should be the Occulus!
+		// printf(glfwGetMonitorName(monitor));
+	} else {
+		monitor = NULL;
+	}
+	// Note: The second last param specifies wether to open a new window (NULL) or create the window in full screen mode
+	// at the specified window.
+	*window = glfwCreateWindow(clientSize.w, clientSize.h, "eDVS: FPS=0", monitor, NULL);
 	if (window == NULL) {
 		fprintf( stderr,
 				"Failed to open GLFW window. Make sure your graphic card supports OpenGL 3.3+. \n");
@@ -439,13 +463,13 @@ int Initialize(ovrHmd *hmd,int *mode, GLFWwindow **window, ovrHmdDesc *hmdDesc, 
 					num_max_events * sizeof(edvs_event_t));
 			events_b = (edvs_event_t*) malloc(
 					num_max_events * sizeof(edvs_event_t));
-			edvsLeft = fopen("edvsdata/edvs_left.txt", "w");
-			edvsRight = fopen("edvsdata/edvs_right.txt", "w");
+			edvsLeft = fopen(DEFAULT_EDVSDATA_LEFT_FILENAME, "w");
+			edvsRight = fopen(DEFAULT_EDVSDATA_RIGHT_FILENAME, "w");
 			break;
 		}
 		case 2: {
-			edvsLeft = fopen("edvsdata/edvs_left.txt", "r");
-			edvsRight = fopen("edvsdata/edvs_right.txt", "r");
+			edvsLeft = fopen(DEFAULT_EDVSDATA_LEFT_FILENAME, "r");
+			edvsRight = fopen(DEFAULT_EDVSDATA_RIGHT_FILENAME, "r");
 			break;
 		}
 		case 3: {
@@ -465,7 +489,8 @@ int Initialize(ovrHmd *hmd,int *mode, GLFWwindow **window, ovrHmdDesc *hmdDesc, 
 
 		if ( currentTime - initTime >= 1.0 ) {
 			// must convert to const char* for glfwSetWindowTitle
-			double d = (double)1000.0/double(nbFrames);
+			// If you want to show ms instead of fps change to "(double)1000/(double)(nbFrames);"
+			double d = (double)(nbFrames);
 			std::stringstream ss;
 			ss << d;
 			const char* str = ss.str().c_str();
@@ -477,22 +502,80 @@ int Initialize(ovrHmd *hmd,int *mode, GLFWwindow **window, ovrHmdDesc *hmdDesc, 
 			initTime += 1.0;
 		}
 	}
+/* *****************************************************************
+// This function reads in all the input params of the main function,
+ * which is all input given in argv. The input should be given by
+ * a name specifying the name of the variable, followed by the true
+ * variable.
+ * This function only checks for inputs mode and filename. The
+ * correct spelling is defined in the corresponding #defines
+********************************************************************/
+int initMainArguments(int argc, char *argv[], int *mode, char *edvsDataFileNameLeft, char *edvsDataFileNameRight){
+	char *cMode = NULL;
+	char *edvsDataFileName = NULL;
+	int initModeViaKeyboard;
+	// 1. parse mode and filename if it is given
+	for(int i = 0; i<argc;i++){
+		if (strcmp(argv[i],MODE_INDICATOR)){
+			edvsDataFileName = argv[i+1];
+		} else if (strcmp(argv[i],FILENAME_INDICATOR)){
+			cMode = argv[i+1];
+		}
+	}
+	// 2. check wether mode is in the correct format, must be string of ONE digit.
+	if(sizeof(cMode) != sizeof("0")){ //checks for != 0 indirectly aswell..
+		printf("Wrong mode given: %s",cMode);
+		initModeViaKeyboard = true;
+	} else{ //mode is 1 digit (entered correctly)
+		*mode = atoi(cMode);
+		initModeViaKeyboard = false;
+	}
+	if(edvsDataFileName!=NULL){
+		edvsDataFileNameLeft = strcat(EDVS_DATA_FOLDER_NAME,edvsDataFileName);
+		edvsDataFileNameLeft = strcat(edvsDataFileName,FILENAME_EXTENSION_LEFT);
+		edvsDataFileNameRight = strcat(EDVS_DATA_FOLDER_NAME,edvsDataFileName);
+		edvsDataFileNameRight = strcat(edvsDataFileName,FILENAME_EXTENSION_RIGHT);
+	} else{
+		printf("No Filename given!");
+		edvsDataFileNameLeft = DEFAULT_EDVSDATA_LEFT_FILENAME;
+		edvsDataFileNameRight = DEFAULT_EDVSDATA_RIGHT_FILENAME;
+	}
 
-int main(void) {
-	//git
+	return initModeViaKeyboard;
+}
+
+
+int main(int argc, char *argv[]) {
+	printf("narg = %i\n",argc);
+	for(int i = 0; i<argc;i++){
+		printf("%s\n",argv[i]);
+	};
+	printf("\n\n");
 	GLuint VertexArrayID;
 	GLuint vertexbuffer;
 	GLuint programID;
 	GLuint MatrixID;
 	GLuint FBOId;
 	glm::mat4 transMatrix;
+	int initModeViaKeyboard;
+	char *edvsDataFileNameLeft;
+	char *edvsDataFileNameRight;
+
+	// *** NOTE: The following function and reading params from main has not been tested yet.***
+	initModeViaKeyboard = initMainArguments(argc, argv,&mode,edvsDataFileNameLeft,edvsDataFileNameRight);
+
 
 	Initialize(&hmd, &mode, &window,&hmdDesc,&eDVS1,&eDVS2,&FBOId, eyeTexture,
-			&programID, &MatrixID,&vertexbuffer,&VertexArrayID,&paramManager);
+			&programID, &MatrixID,&vertexbuffer,&VertexArrayID,&paramManager,initModeViaKeyboard);
+
+	//TEST
+	dataManager = new DataManager;
+	dataManager->ReduceDataFromFile("testDrop.txt",DEFAULT_EDVSDATA_LEFT_FILENAME,0.8);
+	dataManager->ReduceDataFromFile("testDrop2.txt",DEFAULT_EDVSDATA_RIGHT_FILENAME,0.4);
+	//TEST
 
 	//Rendering Loop
 	do {
-
 		measureFPS();
 
 		// Activate keyboard controlling
