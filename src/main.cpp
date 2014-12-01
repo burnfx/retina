@@ -13,7 +13,7 @@
 
 // Defines
 //*********************************************************************
-#define EXPERIMENT_MODE true
+//#define SHOW_ON_OCULUS false
 #define OCULUS_DK_VERSION_DEBUG 2
 #define DEFAULT_EDVSDATA_LEFT_FILENAME "edvsdata/edvs_left.txt"
 #define DEFAULT_EDVSDATA_RIGHT_FILENAME "edvsdata/edvs_right.txt"
@@ -109,15 +109,19 @@ void writeSettings() {
 	float temp_Viewport_Offset;
 	float temp_cDecay;
 
+
+	temp_updateInterval = paramManager.getUpdateInterval();
+	temp_translateBack_Offset = paramManager.getTranslateBackOffset();
+	temp_Viewport_Offset = paramManager.getViewportOffset();
+	temp_cDecay = paramManager.getDecay();
+
+
 	fprintf(settings, "updateInterval: %i \n"
 			"cDecay: %f \n"
 			"translateBack: %f \n"
 			"viewport: %f \n ", temp_updateInterval, temp_cDecay,
 			temp_translateBack_Offset, temp_Viewport_Offset);
-	paramManager.setUpdateInterval(temp_updateInterval);
-	paramManager.setTranslateBackOffset(temp_translateBack_Offset);
-	paramManager.setViewportOffset(temp_Viewport_Offset);
-	paramManager.setDecay(temp_cDecay);
+
 	fclose(settings);
 
 }
@@ -207,7 +211,7 @@ void kControl() {
 	if ((glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS)) {
 		if (mode == 0 && mode != 1) {
 			mode = 1;
-			edvsLeft = fopen(DEFAULT_EDVSDATA_LEFT_FILENAME, "w");GLuint FBOId;
+			edvsLeft = fopen(DEFAULT_EDVSDATA_LEFT_FILENAME, "w");
 			edvsRight = fopen(DEFAULT_EDVSDATA_RIGHT_FILENAME, "w");
 		}
 	}
@@ -294,7 +298,11 @@ int Initialize(ovrHmd *hmd,int *mode, GLFWwindow **window, ovrHmdDesc *hmdDesc, 
 	}
 	// Note: The second last param specifies wether to open a new window (NULL) or create the window in full screen mode
 	// at the specified window.
+#ifdef SHOW_ON_OCULUS
 	*window = glfwCreateWindow(clientSize.w, clientSize.h, "eDVS: FPS=0", monitor, NULL);
+#else
+	*window = glfwCreateWindow(clientSize.w, clientSize.h, "eDVS: FPS=0", NULL, NULL);
+#endif
 	if (window == NULL) {
 		fprintf( stderr,
 				"Failed to open GLFW window. Make sure your graphic card supports OpenGL 3.3+. \n");
@@ -511,6 +519,9 @@ int Initialize(ovrHmd *hmd,int *mode, GLFWwindow **window, ovrHmdDesc *hmdDesc, 
  * correct spelling is defined in the corresponding #defines
 ********************************************************************/
 int initMainArguments(int argc, char *argv[], int *mode, char *edvsDataFileNameLeft, char *edvsDataFileNameRight){
+	if (argc < 2){
+		return true;
+	}
 	char *cMode = NULL;
 	char *edvsDataFileName = NULL;
 	int initModeViaKeyboard;
@@ -522,13 +533,15 @@ int initMainArguments(int argc, char *argv[], int *mode, char *edvsDataFileNameL
 			cMode = argv[i+1];
 		}
 	}
-	// 2. check wether mode is in the correct format, must be string of ONE digit.
-	if(sizeof(cMode) != sizeof("0")){ //checks for != 0 indirectly aswell..
-		printf("Wrong mode given: %s",cMode);
-		initModeViaKeyboard = true;
-	} else{ //mode is 1 digit (entered correctly)
-		*mode = atoi(cMode);
-		initModeViaKeyboard = false;
+	if (cMode != NULL){
+		// 2. check wether mode is in the correct format, must be string of ONE digit.
+		if(sizeof(cMode) != sizeof("0")){ //checks for != 0 indirectly aswell..
+			printf("Wrong mode given: %s",cMode);
+			initModeViaKeyboard = true;
+		} else{ //mode is 1 digit (entered correctly)
+			*mode = atoi(cMode);
+			initModeViaKeyboard = false;
+		}
 	}
 	if(edvsDataFileName!=NULL){
 		edvsDataFileNameLeft = strcat(EDVS_DATA_FOLDER_NAME,edvsDataFileName);
@@ -569,11 +582,17 @@ int main(int argc, char *argv[]) {
 			&programID, &MatrixID,&vertexbuffer,&VertexArrayID,&paramManager,initModeViaKeyboard);
 
 	//TEST
-	dataManager = new DataManager;
-	dataManager->ReduceDataFromFile("testDrop.txt",DEFAULT_EDVSDATA_LEFT_FILENAME,0.8);
-	dataManager->ReduceDataFromFile("testDrop2.txt",DEFAULT_EDVSDATA_RIGHT_FILENAME,0.4);
+	//dataManager = new DataManager;
+	//dataManager->ReduceDataFromFile("testDrop.txt",DEFAULT_EDVSDATA_LEFT_FILENAME,0.8);
+	//dataManager->ReduceDataFromFile("testDrop2.txt",DEFAULT_EDVSDATA_RIGHT_FILENAME,0.4);
 	//TEST
 
+	// Recording mode: type any key into the console to start the recording --> Control when to start recording
+	if(mode == 1){
+		int dummy;
+		printf("Type any key to start recording: \n");
+		scanf("%i", &dummy);
+	}
 	//Rendering Loop
 	do {
 		measureFPS();
@@ -739,7 +758,7 @@ int main(int argc, char *argv[]) {
 
 	} // Check if the ESC key was pressed or the window was closed
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS
-			&& glfwWindowShouldClose(window) == 0);
+			&& glfwWindowShouldClose(window) == 0 && !eDVS1.eof() && !eDVS2.eof());
 
 	// Cleanup VBO
 	glDeleteBuffers(1, &vertexbuffer);

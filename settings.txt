@@ -1,5 +1,5 @@
 updateInterval: 1000 
-cDecay: 0.070000 
-translateBack: -1.680000 
-viewport: 9.500006 
+cDecay: 0.100000 
+translateBack: -1.300000 
+viewport: 20.000000 
  

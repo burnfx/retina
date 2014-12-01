@@ -22,8 +22,9 @@ ParameterManager::ParameterManager() {
 
 	delta_translateBack_Offset = 0.01;
 	delta_viewport_Offset = 0.5;
-	delta_updateInterval = 1000;
+	delta_updateInterval = 100;
 	delta_cDecay = 0.0002;
+	delta_displayInterval = 1000;
 
 	midColor = glm::vec3(0.5f, 0.5f, 0.5f);
 	onColor = glm::vec3(1.0f, 1.0f, 1.0f);
