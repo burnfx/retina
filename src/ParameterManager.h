@@ -29,8 +29,9 @@ private:
 	glm::vec3 onColor;
 	glm::vec3 offColor;
 
-
+	int mode;
 public:
+
 	ParameterManager();
 	virtual ~ParameterManager();
 	void incTranslateBackOffset();
@@ -146,6 +147,14 @@ public:
 
 	void setOnColor(const glm::vec3& onColor) {
 		this->onColor = onColor;
+	}
+
+	int getMode() const {
+		return mode;
+	}
+
+	void setMode(int mode) {
+		this->mode = mode;
 	}
 };
 

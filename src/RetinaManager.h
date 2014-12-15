@@ -1,0 +1,150 @@
+/*
+ * RetinaManager.h
+ *
+ *  Created on: 10.12.2014
+ *      Author: richi-ubuntu
+ */
+#ifndef RETINAMANAGER_H_
+#define RETINAMANAGER_H_
+
+#include <OVR.h>
+#include "eDVSGL.h"
+#include <OVR_CAPI.h>
+#include <OVR_CAPI_GL.h>
+#include "stdio.h"
+#include "ParameterManager.h"
+#include "shader.hpp"
+#include "RetinaCfg.h"
+
+#define RECORD_DURATION 10 //sec
+#define DEFAULT_MODE 2
+#define OCULUS_DK_VERSION_DEBUG 2
+
+#define DEFAULT_EDVSDATA_LEFT_FILENAME "edvsdata/edvs_left.txt"
+#define DEFAULT_EDVSDATA_RIGHT_FILENAME "edvsdata/edvs_right.txt"
+
+/************************Modes supported***************************
+ 0: read from device, no recording
+ 1: read from device, recording
+ 2: read from file, no recording
+ 3: Exeriment: Read Experiment File - Not Implemented yet
+ ******************************************************************/
+
+class RetinaManager {
+private:
+	int recordCounter;
+
+	char *edvsFileName_left;
+	char *edvsFileName_right;
+
+	const size_t num_max_events = 1024;
+
+	double initTime = glfwGetTime();
+	int nbFrames;
+	GLuint FBOId;
+	ovrHmd hmd;
+
+	edvs_stream_handle streamHandle[2];
+	edvs_event_t* events[2];
+
+
+	ovrHmdDesc hmdDesc;
+	ovrGLConfig Cfg;
+	ovrFovPort eyeFov[2];
+	ovrGLTexture eyeTexture[2];
+	ovrEyeRenderDesc eyeRenderDesc[2];
+	ssize_t eventNum[2];
+	FILE * edvsFile[2];
+
+	GLuint VertexArrayID;
+	GLuint vertexbuffer;
+	GLuint colorbuffer;
+	GLuint programID;
+	GLuint MatrixID;
+
+	eDVSGL eDVS[2];
+
+
+
+	void UpdateEvents(int eyeIndex);
+	void WriteEventsToFile(int eyeIndex);
+	void renderOvrEyes();
+	void ReadEventsFromSensor();
+	int isTimeElapsed();
+	glm::mat4 CalcTransMatrix(ovrEyeType Eye);
+	RetinaReturnType getRenderReturnState();
+	void loadSettings();
+	void writeSettings();
+	void writeEventsToFile(FILE * file, edvs_event_t* event, int eventNum);
+	double measureFPS();
+	ParameterManager paramManager;
+	GLFWwindow *pWindow;
+public:
+	void changeFile(char *edvsFileName_left,char *edvsFileName_right);
+	RetinaManager();
+	virtual ~RetinaManager();
+	void setMode(int mode);
+	void TerminateWindow();
+	RetinaReturnType render();
+	int Initialize(int initModeViaKeyboard);
+
+	void KeyControl();
+
+	const ovrGLConfig& getCfg() const {
+		return Cfg;
+	}
+
+	void setCfg(const ovrGLConfig& cfg) {
+		Cfg = cfg;
+	}
+
+	const ovrFovPort *getEyeFov() const{
+		return eyeFov;
+	}
+
+	const ovrEyeRenderDesc *getEyeRenderDesc() const{
+		return eyeRenderDesc;
+	}
+
+	ovrHmd getHmd() const {
+		return hmd;
+	}
+
+	void setHmd(ovrHmd hmd) {
+		this->hmd = hmd;
+	}
+
+	ParameterManager& getParamManager(){
+		return paramManager;
+	}
+
+	void setParamManager(ParameterManager& paramManager) {
+		this->paramManager = paramManager;
+	}
+
+	GLFWwindow*& getWindow() {
+		return pWindow;
+	}
+
+	void setWindow(GLFWwindow*& window) {
+		pWindow = window;
+	}
+
+	char* getEdvsFileNameLeft() const {
+		return edvsFileName_left;
+	}
+
+	void setEdvsFileNameLeft(char* edvsFileNameLeft) {
+		edvsFileName_left = edvsFileNameLeft;
+	}
+
+	char* getEdvsFileNameRight() const {
+		return edvsFileName_right;
+	}
+
+	void setEdvsFileNameRight(char* edvsFileNameRight) {
+		edvsFileName_right = edvsFileNameRight;
+	}
+};
+
+#endif /* RETINAMANAGER_H_ */

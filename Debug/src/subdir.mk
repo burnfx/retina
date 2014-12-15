@@ -6,18 +6,21 @@
 CPP_SRCS += \
 ../src/DataManager.cpp \
 ../src/ParameterManager.cpp \
+../src/RetinaManager.cpp \
 ../src/eDVSGL.cpp \
 ../src/main.cpp 
 
 OBJS += \
 ./src/DataManager.o \
 ./src/ParameterManager.o \
+./src/RetinaManager.o \
 ./src/eDVSGL.o \
 ./src/main.o 
 
 CPP_DEPS += \
 ./src/DataManager.d \
 ./src/ParameterManager.d \
+./src/RetinaManager.d \
 ./src/eDVSGL.d \
 ./src/main.d 
 

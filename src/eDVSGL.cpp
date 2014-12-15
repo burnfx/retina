@@ -148,8 +148,11 @@ float eDVSGL::decayComponent(float current, float target, float decay) {
 	if (current - decay >= target) {
 		return current - decay;
 	}
-	if (current + decay <= target) {
+	else if (current + decay <= target) {
 		return current + decay;
+	}
+	else {
+		return target;
 	}
 	return target;
 }
@@ -164,6 +167,8 @@ glm::vec3 eDVSGL::decayColor(glm::vec3 color, glm::vec3 target, float decay) {
 }
 
 void eDVSGL::draw(float cDecay) {
+	glm::vec3 OnToMid = m_onColor - m_midColor;
+	glm::vec3 OffToMid = m_offColor - m_midColor;
 
 	for (int i = 0; i < 128 * 128; i++) {
 		m_colors[i] = decayColor(m_colors[i], m_midColor, cDecay);

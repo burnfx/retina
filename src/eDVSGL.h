@@ -67,7 +67,7 @@ public:
 
 	void updateEvent(FILE * file, int updateInterval, int displayInterval);
 
-	void draw(float cDecay);
+	void draw(float tDecay);
 };
 
 #endif /* defined(__RetinaRift__eDVSGL__) */
