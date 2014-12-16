@@ -24,14 +24,14 @@ CPP_DEPS += \
 src/edvs/%.o: ../src/edvs/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C++ Compiler'
-	g++ -std=gnu++0x -I"/home/richi-ubuntu/workspace/retina/LibOVR/Include" -I"/home/richi-ubuntu/workspace/retina/src/shader" -I"/home/richi-ubuntu/workspace/retina/src/edvs" -I"/home/richi-ubuntu/workspace/retina/LibOVR/Src" -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	g++ -std=gnu++0x -I"/home/user/workspace2/retina/LibOVR/Include" -I"/home/user/workspace2/retina/src/shader" -I"/home/user/workspace2/retina/src/edvs" -I"/home/user/workspace2/retina/LibOVR/Src" -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 
 src/edvs/%.o: ../src/edvs/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C Compiler'
-	gcc -DGXX_EXPERIMENTAL_CXX0X -I"/home/richi-ubuntu/workspace/retina/LibOVR/Src" -I"/home/richi-ubuntu/workspace/retina/LibOVR/Include" -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	gcc -DGXX_EXPERIMENTAL_CXX0X -I"/home/user/workspace2/retina/LibOVR/Src" -I"/home/user/workspace2/retina/LibOVR/Include" -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 
