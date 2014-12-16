@@ -32,7 +32,6 @@ int RetinaManager::isTimeElapsed() {
  * 60FPS = 16.666667ms ## 75 FPS = 13.333333ms, etc.
  ******************************************************************************/
 double RetinaManager::measureFPS() {
-
 	double currentTime = glfwGetTime();
 	nbFrames++;
 	double d = 1.0;

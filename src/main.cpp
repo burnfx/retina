@@ -8,7 +8,6 @@
 #include "shader.hpp"
 
 #include "server.h"
-#include "client.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -115,7 +114,6 @@ int main(int argc, char *argv[]) {
 	pthread_create(&srv, 0, startServer, &value);
 	pthread_detach(srv);
 
-    startClient();
 	// ************* UNTIL HERE ***********************
 
 	int initModeViaKeyboard;
@@ -133,8 +131,6 @@ int main(int argc, char *argv[]) {
 	RetinaReturnType status;
 	while (1) {
 		// GET INPUTS --> mode change? DO IT HERE, BEFORE RENDER..
-
-
 		retinaManager->KeyControl();
 		status = retinaManager->render();
 		if (status == RecordTimeElapsed || status == CloseWindowRequest) {
@@ -145,31 +141,29 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-
 	// Play/Pause über "weiter machen mit retinaManager->render()"
 	// Back / Forward über changeFile
 	// Stop: fehlt noch --> Switch in einen "mode", der nur schwarz zeigt (mode 5 z.B.)
-	while(1){
-		while(status == ContinueRunning){
-			//updates = getGUIUpdates(); // Hier fehlt dann auch noch was man mit den updates tut
-			// if(updates.status == StopRunning) {retinaManager->setMode(5); break; //so oder ähnlich...
-
-			retinaManager->KeyControl();
-			status = retinaManager->render();
-		}
-		if (status == CloseWindowRequest){
-			break;
-		}
-		if (status == EndOfFile){
-			retinaManager->setMode(5);
-		}
-	}
+//	while(1){
+//		while(status == ContinueRunning){
+//			//updates = getGUIUpdates(); // Hier fehlt dann auch noch was man mit den updates tut
+//			// if(updates.status == StopRunning) {retinaManager->setMode(5); break; //so oder ähnlich...
+//
+//			retinaManager->KeyControl();
+//			status = retinaManager->render();
+//		}
+//		if (status == CloseWindowRequest){
+//			break;
+//		}
+//		if (status == EndOfFile){
+//			retinaManager->setMode(5);
+//		}
+//	}
 
 
 
 	retinaManager->TerminateWindow();
 	// ************ UND HIER NOCHMAL ************
-	stopClient(1);
 	terminateSocket(1);
 	return 0;
 }

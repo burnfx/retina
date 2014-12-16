@@ -38,9 +38,43 @@ void *handleGUI(void * paramsd) {
         			printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
         			break;
         		}
-        		else if (strcmp(cmd, "-quit") == 0) {
+        		else if (strcmp(cmd, "-mode") == 0) {
+        			retinaManager.setMode(param);
         			printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
         		}
+        		else if (strcmp(cmd, "-control") == 0) {
+        			retinaManager.setControl(param);
+					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
+				}
+        		else if (strcmp(cmd, "-cDecay") == 0) {
+        			retinaManager.setcDecay(param);
+					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
+				}
+        		else if (strcmp(cmd, "-updateInterval") == 0) {
+        			retinaManager.setUpdateInterval(param);
+					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
+				}
+        		else if (strcmp(cmd, "-translateBack_Offset") == 0) {
+        			retinaManager.setTranslateBack_Offset(param);
+					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
+				}
+        		else if (strcmp(cmd, "-viewport_Offset") == 0) {
+        			retinaManager.setViewport_Offset(param);
+					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
+				}
+        		else if (strcmp(cmd, "-file") == 0) {
+        			retinaManager.setFile(param);
+					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
+				}
+        		else if (strcmp(cmd, "-reduction") == 0) {
+        			retinaManager.setReduction(param);
+					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
+				}
+        		else if (strcmp(cmd, "-redgreen") == 0) {
+        			retinaManager.setRedGreen(param);
+					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
+				}
+
 
         	} else {
         		printf("command not found: %s \n",line);
