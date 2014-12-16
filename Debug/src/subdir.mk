@@ -4,25 +4,28 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
-../src/DataManager.cpp \
 ../src/ParameterManager.cpp \
 ../src/RetinaManager.cpp \
+../src/client.cpp \
 ../src/eDVSGL.cpp \
-../src/main.cpp 
+../src/main.cpp \
+../src/server.cpp 
 
 OBJS += \
-./src/DataManager.o \
 ./src/ParameterManager.o \
 ./src/RetinaManager.o \
+./src/client.o \
 ./src/eDVSGL.o \
-./src/main.o 
+./src/main.o \
+./src/server.o 
 
 CPP_DEPS += \
-./src/DataManager.d \
 ./src/ParameterManager.d \
 ./src/RetinaManager.d \
+./src/client.d \
 ./src/eDVSGL.d \
-./src/main.d 
+./src/main.d \
+./src/server.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

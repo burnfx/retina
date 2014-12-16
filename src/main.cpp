@@ -7,7 +7,9 @@
 #include <OVR_CAPI_GL.h>
 #include "shader.hpp"
 
-#include "DataManager.h"
+#include "server.h"
+#include "client.h"
+
 #include <string.h>
 #include <stdio.h>
 #include "RetinaManager.h"
@@ -105,23 +107,34 @@ int main(int argc, char *argv[]) {
 	};
 	printf("\n\n");
 
-	int initModeViaKeyboard;
-	char *edvsDataFileNameLeft;
-	char *edvsDataFileNameRight;
+	/* *******************************************
+	 * THIS IS THE STUFF FOR FELIX's SERVER
+	 *********************************************/
+	pthread_t srv;
+	int value = 1;
+	pthread_create(&srv, 0, startServer, &value);
+	pthread_detach(srv);
 
+    startClient();
+	// ************* UNTIL HERE ***********************
+
+	int initModeViaKeyboard;
 	// TODO: reading params from main has not been tested yet (initMainArguments)
 	initModeViaKeyboard = initMainArguments(argc, argv);
 
 	retinaManager = new RetinaManager();
 	retinaManager->Initialize(initModeViaKeyboard);
-	// TEST
+	glfwSetWindowSizeCallback(retinaManager->getWindow(), WindowSizeCallback);
+	// TEST setMode und changeFile functions
 	//retinaManager->setMode(2);
 	//retinaManager->changeFile("edvsdata/e0d30l1m1r6h444_left.txt","edvsdata/e0d30l1m1r6h444_right.txt");
-	RetinaReturnType status;
 
-	glfwSetWindowSizeCallback(retinaManager->getWindow(), WindowSizeCallback);
+
+	RetinaReturnType status;
 	while (1) {
 		// GET INPUTS --> mode change? DO IT HERE, BEFORE RENDER..
+
+
 		retinaManager->KeyControl();
 		status = retinaManager->render();
 		if (status == RecordTimeElapsed || status == CloseWindowRequest) {
@@ -132,7 +145,32 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+
+	// Play/Pause über "weiter machen mit retinaManager->render()"
+	// Back / Forward über changeFile
+	// Stop: fehlt noch --> Switch in einen "mode", der nur schwarz zeigt (mode 5 z.B.)
+	while(1){
+		while(status == ContinueRunning){
+			//updates = getGUIUpdates(); // Hier fehlt dann auch noch was man mit den updates tut
+			// if(updates.status == StopRunning) {retinaManager->setMode(5); break; //so oder ähnlich...
+
+			retinaManager->KeyControl();
+			status = retinaManager->render();
+		}
+		if (status == CloseWindowRequest){
+			break;
+		}
+		if (status == EndOfFile){
+			retinaManager->setMode(5);
+		}
+	}
+
+
+
 	retinaManager->TerminateWindow();
+	// ************ UND HIER NOCHMAL ************
+	stopClient(1);
+	terminateSocket(1);
 	return 0;
 }
 

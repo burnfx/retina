@@ -274,11 +274,12 @@ RetinaReturnType RetinaManager::getRenderReturnState() {
 
 int RetinaManager::Initialize(int initModeViaKeyboard) {
 	// Init File Names
-	edvsFileName_left = DEFAULT_EDVSDATA_LEFT_FILENAME;
-	edvsFileName_right = DEFAULT_EDVSDATA_RIGHT_FILENAME;
+	RetinaManager::edvsFileName_left = DEFAULT_EDVSDATA_LEFT_FILENAME;
+	RetinaManager::edvsFileName_right = DEFAULT_EDVSDATA_RIGHT_FILENAME;
+
 	if (initModeViaKeyboard) {
 		int nTries = 0;
-		printf("Please choose the paramManager.mode: \n"
+		printf("Please choose the mode: \n"
 				"0: Read from devices, no recording \n"
 				"1: Read from devices, recording \n"
 				"2: Read from files \n"
