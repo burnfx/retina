@@ -8,6 +8,11 @@
 #include "ParameterManager.h"
 #include <glm/glm.hpp>
 
+
+
+
+
+
 ParameterManager::ParameterManager() {
 	updateInterval = 1000;
 	displayInterval = 10000;
@@ -38,6 +43,7 @@ void ParameterManager::setColors(glm::vec3 midColor, glm::vec3 onColor, glm::vec
 	ParameterManager::onColor = onColor;
 	ParameterManager::offColor = offColor;
 }
+
 
 
 void ParameterManager::incTranslateBackOffset(){

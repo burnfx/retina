@@ -114,6 +114,8 @@ void eDVSGL::updateEvent(FILE * file, int updateInterval, int displayInterval) {
 			printf("eof! \n");
 			m_eof = 1;
 			break;
+		} else{
+			m_eof = 0;
 		}
 
 		accumulation_time = d - m_accumulateBegin;

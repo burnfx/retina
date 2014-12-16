@@ -14,7 +14,7 @@
 #include "stdio.h"
 #include "ParameterManager.h"
 #include "shader.hpp"
-#include "RetinaCfg.h"
+#include "main.h"
 
 #define RECORD_DURATION 10 //sec
 #define DEFAULT_MODE 2
@@ -79,6 +79,7 @@ private:
 	double measureFPS();
 	ParameterManager paramManager;
 	GLFWwindow *pWindow;
+	RetinaReturnType State;
 public:
 	void changeFile(char *edvsFileName_left,char *edvsFileName_right);
 	RetinaManager();
@@ -145,6 +146,29 @@ public:
 	void setEdvsFileNameRight(char* edvsFileNameRight) {
 		edvsFileName_right = edvsFileNameRight;
 	}
+
+
+	void setMode(char *mode){
+		this->setMode(atoi(mode));
+	}
+	void setcDecay(char *cDecay){
+		this->getParamManager().setDecay((float)atoi(cDecay));
+	}
+	void setUpdateInterval(char *updateInterval){
+		this->getParamManager().setUpdateInterval(atoi(updateInterval));
+	}
+	void setTranslateBack_Offset(char *translate_back){
+		this->getParamManager().setTranslateBackOffset((float)atoi(translate_back));
+	}
+	void setViewport_Offset(char *viewport){
+		this->getParamManager().setViewportOffset((float)atoi(viewport));
+	}
+
+	void setRedGreen(char *colorVal);
+	void setFile(char *filename);
+
+	void setControl(char *control);
+	void StopVideo();
 };
 
 #endif /* RETINAMANAGER_H_ */

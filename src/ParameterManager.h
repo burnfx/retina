@@ -10,6 +10,8 @@
 
 #include <glm/glm.hpp>
 
+#define DEFAULT_MID_COLOR_1
+
 
 class ParameterManager {
 private:

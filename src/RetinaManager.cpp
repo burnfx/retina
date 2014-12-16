@@ -7,7 +7,9 @@
 #include "RetinaManager.h"
 #include "ParameterManager.h"
 #include <sstream>
-#include "RetinaCfg.h"
+#include <string.h>
+#include <stdio.h>
+#include "main.h"
 
 #define getSignForEye(x) ((x)==0 ? (1) : (-1))
 
@@ -32,6 +34,7 @@ int RetinaManager::isTimeElapsed() {
  * 60FPS = 16.666667ms ## 75 FPS = 13.333333ms, etc.
  ******************************************************************************/
 double RetinaManager::measureFPS() {
+
 	double currentTime = glfwGetTime();
 	nbFrames++;
 	double d = 1.0;
@@ -143,6 +146,8 @@ void RetinaManager::UpdateEvents(int eyeIndex) {
 				RetinaManager::eDVS[eyeIndex].updateEvent(RetinaManager::edvsFile[eyeIndex],
 						RetinaManager::paramManager.getUpdateInterval(),
 						RetinaManager::paramManager.getDisplayInterval());
+			} else{
+				fclose(RetinaManager::edvsFile[eyeIndex]);
 			}
 			break;
 
@@ -252,21 +257,31 @@ RetinaReturnType RetinaManager::render() {
 }
 
 RetinaReturnType RetinaManager::getRenderReturnState() {
-	RetinaReturnType returnState = ContinueRunning;
+	RetinaReturnType tempState = RetinaManager::State;
 
 	if (RetinaManager::paramManager.getMode() == 4 && RetinaManager::isTimeElapsed()) {
-		returnState = returnState | RecordTimeElapsed;
+		tempState = tempState | RecordTimeElapsed;
+	} else{
+		tempState = tempState & ~RecordTimeElapsed;
 	}
 	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-		returnState = returnState | CloseWindowRequest;
+		tempState = tempState | CloseWindowRequest;
+	} else{
+		tempState = tempState & ~CloseWindowRequest;
 	}
 	if (glfwWindowShouldClose(RetinaManager::pWindow)) {
-		returnState = returnState | CloseWindowRequest;
+		tempState = tempState | CloseWindowRequest;
+	} else{
+		tempState = tempState & ~CloseWindowRequest;
 	}
 	if (RetinaManager::eDVS[0].eof() || RetinaManager::eDVS[1].eof()) {
-		returnState = returnState | EndOfFile;
+		tempState = tempState | EndOfFile;
+	} else{
+		tempState = tempState & ~EndOfFile;
 	}
-	return returnState;
+
+	RetinaManager::State = tempState;
+	return tempState;
 }
 
 
@@ -360,8 +375,8 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 	}
 	// Note: The second last param specifies wether to open a new pWindow (NULL) or create the pWindow in full screen paramManager.mode
 	// at the specified pWindow.
-#ifdef SHOW_ON_OCULUS
-	*pWindow = glfwCreateWindow(clientSize.w, clientSize.h, "eDVS: FPS=0", monitor, NULL);
+#ifndef SHOW_ON_OCULUS
+	pWindow = glfwCreateWindow(clientSize.w, clientSize.h, "eDVS: FPS=0", monitor, NULL);
 #else
 	pWindow = glfwCreateWindow(clientSize.w, clientSize.h, "eDVS: FPS=0", NULL,
 	NULL);
@@ -499,6 +514,7 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 	RetinaManager::eDVS[1].setGL(pWindow, RetinaManager::vertexbuffer, RetinaManager::colorbuffer, RetinaManager::programID);
 	// *********************** /Initialize eDVS *************************************
 
+	RetinaManager::State = Play;
 	return 1;
 }
 
@@ -528,6 +544,10 @@ void RetinaManager::changeFile(char *edvsFileName_left,char *edvsFileName_right)
 			break;
 		}
 	}
+	RetinaManager::eDVS[0].initialize(RetinaManager::paramManager.getMidColor(),
+			RetinaManager::paramManager.getOnColor(), paramManager.getOffColor());
+	RetinaManager::eDVS[1].initialize(RetinaManager::paramManager.getMidColor(),
+			RetinaManager::paramManager.getOnColor(), paramManager.getOffColor());
 }
 
 void RetinaManager::setMode(int mode){
@@ -660,4 +680,66 @@ void RetinaManager::KeyControl() {
 	 }
 	 }
 	 */
+}
+
+void RetinaManager::setRedGreen(char *colorVal){
+	glm::vec3 midColor;
+	glm::vec3 onColor;
+	glm::vec3 offColor;
+	if(atoi(colorVal)){
+		midColor = glm::vec3(0.5f, 0.5f, 0.5f);
+		onColor = glm::vec3(1.0f, 1.0f, 1.0f);
+		offColor = glm::vec3(0.0f, 0.0f, 0.0f);
+	}else{
+// TODO: 1. CHANGE 2nd color, 2nd. MAKE DEFINES? (2. not necissary)...
+		midColor = glm::vec3(0.5f, 0.5f, 0.5f);
+		onColor = glm::vec3(1.0f, 1.0f, 1.0f);
+		offColor = glm::vec3(0.0f, 0.0f, 0.0f);
+	}
+	this->getParamManager().setMidColor(midColor);
+	this->getParamManager().setOnColor(onColor);
+	this->getParamManager().setOffColor(offColor);
+}
+
+
+void RetinaManager::setFile(char *filename){
+	std::string edvsFileName_left;
+	std::string edvsFileName_right;
+	edvsFileName_left = (std::string)EDVS_DATA_FOLDER_NAME
+			+ (std::string)filename + (std::string)FILENAME_EXTENSION_LEFT;
+	edvsFileName_right = (std::string)EDVS_DATA_FOLDER_NAME
+			+ (std::string)filename + (std::string)FILENAME_EXTENSION_RIGHT;
+
+	/*
+	char *edvsFileName_left;
+	char *edvsFileName_right;
+	strcpy(edvsFileName_left, EDVS_DATA_FOLDER_NAME);
+	strcpy(edvsFileName_right, EDVS_DATA_FOLDER_NAME);
+	strcat(edvsFileName_left,filename);
+	strcat(edvsFileName_right, filename);
+	strcat(edvsFileName_left, FILENAME_EXTENSION_LEFT);
+	strcat(edvsFileName_right, FILENAME_EXTENSION_RIGHT);
+	*/
+
+	this->changeFile((char *)edvsFileName_left.c_str(),(char *)edvsFileName_right.c_str());
+}
+
+
+
+
+void RetinaManager::setControl(char *control){
+	if(strcmp(control,PLAY)){
+		RetinaManager::State = RetinaManager::State & ~Pause;
+	}else if(strcmp(control, PAUSE)){
+		RetinaManager::State = RetinaManager::State | Pause;
+	}
+	else if(strcmp(control, STOP)){
+		RetinaManager::State = RetinaManager::State | Stop;
+	}
+}
+
+
+void RetinaManager::StopVideo(){
+	fclose(this->edvsFile[0]);
+	fclose(this->edvsFile[1]);
 }

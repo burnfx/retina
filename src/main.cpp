@@ -1,3 +1,5 @@
+#include "main.h"
+
 #include <iostream>
 #include <sstream>
 #include "edvs.h"
@@ -8,12 +10,11 @@
 #include "shader.hpp"
 
 #include "server.h"
-
 #include <string.h>
 #include <stdio.h>
 #include "RetinaManager.h"
 
-#include "RetinaCfg.h"
+
 
 // Defines
 //*********************************************************************
@@ -137,7 +138,9 @@ int main(int argc, char *argv[]) {
 			break;
 		} else if (status == EndOfFile) {
 			//TODO: do what ever you want.... for example break loop...
-			break;
+			//break;
+			retinaManager->StopVideo();
+			retinaManager->setFile("e0d30l1m1r1h444");
 		}
 	}
 
