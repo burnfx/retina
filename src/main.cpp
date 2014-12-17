@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
 				render = false;
 				break;
 			case Stop:
-				render = false
+				render = false;
 				// FIXME: next 2 lines are just for testing --> now rerunning the same file works. Just delete the next 2 lines later
 				render = retinaManager->setFile("edvs");
 				retinaManager->setState(Play);

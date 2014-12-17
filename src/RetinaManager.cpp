@@ -679,11 +679,11 @@ int RetinaManager::setFile(char *filename) {
 
 
 void RetinaManager::setControl(char *control) {
-	if (strcmp(control, PLAY)) {
+	if (strcmp(control, PLAY) == 0) {
 		RetinaManager::State = Play;
-	} else if (strcmp(control, PAUSE)) {
+	} else if (strcmp(control, PAUSE) == 0) {
 		RetinaManager::State = Pause;
-	} else if (strcmp(control, STOP)) {
+	} else if (strcmp(control, STOP) == 0) {
 		RetinaManager::State = Stop;
 	}
 }

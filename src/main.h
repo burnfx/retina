@@ -13,9 +13,9 @@
 #define DEFAULT_MODE 2
 
 
-#define PLAY "-play"
-#define PAUSE "-pause"
-#define STOP "-stop"
+#define PLAY "play"
+#define PAUSE "pause"
+#define STOP "stop"
 
 
 class RetinaManager;
