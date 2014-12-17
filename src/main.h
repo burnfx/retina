@@ -9,7 +9,7 @@
 #define FILENAME_EXTENSION_RIGHT "_right.txt"
 #define FILENAME_EXTENSION_LEFT "_left.txt"
 
-#define SHOW_ON_OCULUS
+#define SHOW_ON_OCULUS true
 #define DEFAULT_MODE 2
 
 
@@ -23,28 +23,36 @@ extern RetinaManager *retinaManager;
 
 
 
-enum RetinaReturnType {
-	Play 				= 0,
+enum RetinaRenderReturnType {
+	Default				= 0,
 	EndOfFile 			= 1 << 0,
 	RecordTimeElapsed 	= 1 << 1,
 	CloseWindowRequest 	= 1 << 2,
-	Pause 				= 1 << 3,
-	Stop				= 1 << 4,
 };
-inline RetinaReturnType operator |(RetinaReturnType a, RetinaReturnType b) {
-	return static_cast<RetinaReturnType>(static_cast<int>(a) | static_cast<int>(b));
+inline RetinaRenderReturnType operator |(RetinaRenderReturnType a, RetinaRenderReturnType b) {
+	return static_cast<RetinaRenderReturnType>(static_cast<int>(a) | static_cast<int>(b));
 }
 
-inline RetinaReturnType operator &(RetinaReturnType a, RetinaReturnType b) {
-	return static_cast<RetinaReturnType>(static_cast<int>(a) & static_cast<int>(b));
+inline RetinaRenderReturnType operator &(RetinaRenderReturnType a, RetinaRenderReturnType b) {
+	return static_cast<RetinaRenderReturnType>(static_cast<int>(a) & static_cast<int>(b));
+}
+// Overloaded operator == to the same as & operator. Example:
+// If e.g. Stop and EndOfFile is true for RetinaRenderReturnType example, then
+// example == Stop and example == EndOfFile both will be true.
+inline RetinaRenderReturnType operator ==(RetinaRenderReturnType a, RetinaRenderReturnType b) {
+	return static_cast<RetinaRenderReturnType>(static_cast<int>(a) & static_cast<int>(b));
 }
 
-inline RetinaReturnType operator ==(RetinaReturnType a, RetinaReturnType b) {
-	return static_cast<RetinaReturnType>(static_cast<int>(a) & static_cast<int>(b));
+inline RetinaRenderReturnType operator ~(RetinaRenderReturnType a) {
+	return static_cast<RetinaRenderReturnType>(~(static_cast<int>(a)));
 }
 
-inline RetinaReturnType operator ~(RetinaReturnType a) {
-	return static_cast<RetinaReturnType>(~(static_cast<int>(a)));
-}
 
+
+
+enum RetinaStateType {
+	Play,
+	Pause,
+	Stop,
+};
 #endif

@@ -54,7 +54,7 @@ private:
 	ovrGLTexture eyeTexture[2];
 	ovrEyeRenderDesc eyeRenderDesc[2];
 	ssize_t eventNum[2];
-	FILE * edvsFile[2];
+
 
 	GLuint VertexArrayID;
 	GLuint vertexbuffer;
@@ -62,8 +62,8 @@ private:
 	GLuint programID;
 	GLuint MatrixID;
 
-	eDVSGL eDVS[2];
-
+	eDVSGL *eDVS[2];
+	FILE * edvsFile[2];
 
 
 	void UpdateEvents(int eyeIndex);
@@ -72,21 +72,21 @@ private:
 	void ReadEventsFromSensor();
 	int isTimeElapsed();
 	glm::mat4 CalcTransMatrix(ovrEyeType Eye);
-	RetinaReturnType getRenderReturnState();
+	RetinaRenderReturnType getRenderReturnState();
 	void loadSettings();
 	void writeSettings();
 	void writeEventsToFile(FILE * file, edvs_event_t* event, int eventNum);
 	double measureFPS();
 	ParameterManager paramManager;
 	GLFWwindow *pWindow;
-	RetinaReturnType State;
+	RetinaStateType State;
 public:
-	void changeFile(char *edvsFileName_left,char *edvsFileName_right);
+
 	RetinaManager();
 	virtual ~RetinaManager();
 	void setMode(int mode);
 	void TerminateWindow();
-	RetinaReturnType render();
+	RetinaRenderReturnType render();
 	int Initialize(int initModeViaKeyboard);
 
 	void KeyControl();
@@ -165,10 +165,18 @@ public:
 	}
 
 	void setRedGreen(char *colorVal);
-	void setFile(char *filename);
+	int setFile(char *filename);
 
 	void setControl(char *control);
-	void StopVideo();
+	void CreateEDVSGL();
+
+	RetinaStateType getState() const {
+		return State;
+	}
+
+	void setState(RetinaStateType state) {
+		State = state;
+	}
 };
 
 #endif /* RETINAMANAGER_H_ */

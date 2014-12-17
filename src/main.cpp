@@ -14,19 +14,14 @@
 #include <stdio.h>
 #include "RetinaManager.h"
 
-
-
-// Defines
-//*********************************************************************
 #define MODE_INDICATOR "-mode"
 #define FILENAME_INDICATOR "-filename"
 #define EDVS_DATA_FOLDER_NAME "edvsdata/"
 #define FILENAME_EXTENSION_RIGHT "_right.txt"
 #define FILENAME_EXTENSION_LEFT "_left.txt"
 
-#define SHOW_ON_OCULUS
+#define SHOW_ON_OCULUS true
 #define DEFAULT_MODE 2
-
 //**********************************************************************
 RetinaManager *retinaManager;
 
@@ -82,7 +77,6 @@ int initMainArguments(int argc, char *argv[]) {
 	return initModeViaKeyboard;
 }
 
-
 static void WindowSizeCallback(GLFWwindow* p_Window, int p_Width, int p_Height) {
 	if (glfwGetKey(retinaManager->getWindow(),
 	GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
@@ -123,50 +117,44 @@ int main(int argc, char *argv[]) {
 
 	retinaManager = new RetinaManager();
 	retinaManager->Initialize(initModeViaKeyboard);
+	//cannot take RetinaManager-Method for this, so do it here.
 	glfwSetWindowSizeCallback(retinaManager->getWindow(), WindowSizeCallback);
-	// TEST setMode und changeFile functions
-	//retinaManager->setMode(2);
-	//retinaManager->changeFile("edvsdata/e0d30l1m1r6h444_left.txt","edvsdata/e0d30l1m1r6h444_right.txt");
 
-
-	RetinaReturnType status;
+	bool render = false;
+	RetinaRenderReturnType renderState;
 	while (1) {
-		// GET INPUTS --> mode change? DO IT HERE, BEFORE RENDER..
 		retinaManager->KeyControl();
-		status = retinaManager->render();
-		if (status == RecordTimeElapsed || status == CloseWindowRequest) {
-			break;
-		} else if (status == EndOfFile) {
-			//TODO: do what ever you want.... for example break loop...
-			//break;
-			retinaManager->StopVideo();
-			retinaManager->setFile("e0d30l1m1r1h444");
+		switch(retinaManager->getState()){ //THIS IS NOT renderState, but State for play pause etc.
+			case Play:
+				render = true;
+				break;
+			case Pause:
+				render = false;
+				break;
+			case Stop:
+				render = false
+				// FIXME: next 2 lines are just for testing --> now rerunning the same file works. Just delete the next 2 lines later
+				render = retinaManager->setFile("edvs");
+				retinaManager->setState(Play);
+				break;
+		}
+
+		if(render){
+			// ******************* ONE RENDER LOOP ***************************
+			renderState = retinaManager->render();
+			if (renderState == CloseWindowRequest) {
+				break;
+			}
+			if (renderState == EndOfFile || renderState == RecordTimeElapsed) {
+				retinaManager->setState(Stop);
+			}
+			// ****************** /ONE RENDER LOOP ***************************
 		}
 	}
-
-	// Play/Pause über "weiter machen mit retinaManager->render()"
-	// Back / Forward über changeFile
-	// Stop: fehlt noch --> Switch in einen "mode", der nur schwarz zeigt (mode 5 z.B.)
-//	while(1){
-//		while(status == ContinueRunning){
-//			//updates = getGUIUpdates(); // Hier fehlt dann auch noch was man mit den updates tut
-//			// if(updates.status == StopRunning) {retinaManager->setMode(5); break; //so oder ähnlich...
-//
-//			retinaManager->KeyControl();
-//			status = retinaManager->render();
-//		}
-//		if (status == CloseWindowRequest){
-//			break;
-//		}
-//		if (status == EndOfFile){
-//			retinaManager->setMode(5);
-//		}
-//	}
 
 
 
 	retinaManager->TerminateWindow();
-	// ************ UND HIER NOCHMAL ************
 	terminateSocket(1);
 	return 0;
 }

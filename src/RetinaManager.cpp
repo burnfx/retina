@@ -131,29 +131,29 @@ void RetinaManager::UpdateEvents(int eyeIndex) {
 	// Read events in different modes
 	switch (RetinaManager::paramManager.getMode()) {
 		case 0: {
-			RetinaManager::eDVS[eyeIndex].updateEvent(RetinaManager::events[eyeIndex],
+			RetinaManager::eDVS[eyeIndex]->updateEvent(RetinaManager::events[eyeIndex],
 					RetinaManager::eventNum[eyeIndex], RetinaManager::paramManager.getUpdateInterval());
 			break;
 		}
 
 		case 1: {
-			RetinaManager::eDVS[eyeIndex].updateEvent(RetinaManager::events[eyeIndex],
+			RetinaManager::eDVS[eyeIndex]->updateEvent(RetinaManager::events[eyeIndex],
 					RetinaManager::eventNum[eyeIndex], RetinaManager::paramManager.getUpdateInterval());
 			break;
 		}
 		case 2: {
-			if (!RetinaManager::eDVS[eyeIndex].eof()) {
-				RetinaManager::eDVS[eyeIndex].updateEvent(RetinaManager::edvsFile[eyeIndex],
+			if (!RetinaManager::eDVS[eyeIndex]->eof()) {
+				RetinaManager::eDVS[eyeIndex]->updateEvent(RetinaManager::edvsFile[eyeIndex],
 						RetinaManager::paramManager.getUpdateInterval(),
 						RetinaManager::paramManager.getDisplayInterval());
-			} else{
+			} else {
 				fclose(RetinaManager::edvsFile[eyeIndex]);
 			}
 			break;
 
 		}
 		case 4: {
-			RetinaManager::eDVS[eyeIndex].updateEvent(RetinaManager::events[eyeIndex],
+			RetinaManager::eDVS[eyeIndex]->updateEvent(RetinaManager::events[eyeIndex],
 					RetinaManager::eventNum[eyeIndex], RetinaManager::paramManager.getUpdateInterval());
 			break;
 		}
@@ -212,14 +212,14 @@ void RetinaManager::renderOvrEyes() {
 		glUniformMatrix4fv(RetinaManager::MatrixID, 1, GL_FALSE, &transMatrix[0][0]);
 
 		// Draw the events
-		RetinaManager::eDVS[eyeIndex].draw(RetinaManager::paramManager.getDecay());
+		RetinaManager::eDVS[eyeIndex]->draw(RetinaManager::paramManager.getDecay());
 
 		ovrHmd_EndEyeRender((RetinaManager::hmd), Eye, eyePose, &(RetinaManager::eyeTexture[Eye]).Texture);
 	}
 	ovrHmd_EndFrame((RetinaManager::hmd));
 }
 
-RetinaReturnType RetinaManager::render() {
+RetinaRenderReturnType RetinaManager::render() {
 
 	RetinaManager::measureFPS();
 	if (RetinaManager::paramManager.getMode() == 0 || RetinaManager::paramManager.getMode() == 1
@@ -256,35 +256,27 @@ RetinaReturnType RetinaManager::render() {
 	return RetinaManager::getRenderReturnState();
 }
 
-RetinaReturnType RetinaManager::getRenderReturnState() {
-	RetinaReturnType tempState = RetinaManager::State;
+RetinaRenderReturnType RetinaManager::getRenderReturnState() {
+	RetinaRenderReturnType tempState = Default;
 
 	if (RetinaManager::paramManager.getMode() == 4 && RetinaManager::isTimeElapsed()) {
 		tempState = tempState | RecordTimeElapsed;
-	} else{
+	} else {
 		tempState = tempState & ~RecordTimeElapsed;
 	}
-	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS || glfwWindowShouldClose(RetinaManager::pWindow)) {
 		tempState = tempState | CloseWindowRequest;
-	} else{
+	} else {
 		tempState = tempState & ~CloseWindowRequest;
 	}
-	if (glfwWindowShouldClose(RetinaManager::pWindow)) {
-		tempState = tempState | CloseWindowRequest;
-	} else{
-		tempState = tempState & ~CloseWindowRequest;
-	}
-	if (RetinaManager::eDVS[0].eof() || RetinaManager::eDVS[1].eof()) {
+	if (RetinaManager::eDVS[0]->eof() || RetinaManager::eDVS[1]->eof()) {
 		tempState = tempState | EndOfFile;
-	} else{
+	} else {
 		tempState = tempState & ~EndOfFile;
 	}
 
-	RetinaManager::State = tempState;
 	return tempState;
 }
-
-
 
 int RetinaManager::Initialize(int initModeViaKeyboard) {
 	// Init File Names
@@ -309,7 +301,6 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 
 		RetinaManager::setMode(tempMode);
 	} //ELSE - paramManager.mode must be initialized ELSEWHERE!
-
 
 	// ********************* Initialize OVR ******************************
 	// Initializes LibOVR.
@@ -348,7 +339,6 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 	texSize.w = texSizeLeft.w + texSizeRight.w;
 	texSize.h = (texSizeLeft.h > texSizeRight.h ? texSizeRight.h : texSizeRight.h);
 	// ******************** /InitializeT OVR ******************************
-
 
 	// ******************** Initialize GLFW *****************************
 	if (!glfwInit()) {
@@ -403,14 +393,13 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 	printf("Renderer: %s\n", (char*) glGetString(GL_RENDERER));
 	// ******************* /Initialize GLFW *****************************
 
-
 	// ******************* Initialize GLEW *********************************
 	glewExperimental = true; // Needed for core profile
 	if (glewInit() != GLEW_OK) {
 		fprintf(stderr, "Failed to initialize GLEW\n");
 		return -1;
 	}
-    // ****************** /Initialize GLEW *********************************
+	// ****************** /Initialize GLEW *********************************
 
 	// Create the texture we're going to render to...
 	GLuint texId;
@@ -424,7 +413,6 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-
 	// *********************** Create BUFFERS ************************************
 	// Create FBO
 	glGenFramebuffers(1, &(RetinaManager::FBOId));
@@ -434,12 +422,9 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 	glGenRenderbuffers(1, &depthBufferId);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthBufferId);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, texSize.w, texSize.h);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-	GL_RENDERBUFFER, depthBufferId);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferId);
 	// Create vertexshader buffer
 	glGenBuffers(1, &(RetinaManager::vertexbuffer));
-
-
 	glGenBuffers(1, &(RetinaManager::colorbuffer));
 
 	// Create VertexArray
@@ -450,7 +435,6 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 	RetinaManager::programID = LoadShaders("src/shader/vertexshader.txt", "src/shader/fragmentshader.txt");
 	RetinaManager::MatrixID = glGetUniformLocation(RetinaManager::programID, "transMatrix");
 	// ********************** /Create BUFFERS ************************************
-
 
 	// Set the texture as our colour attachment #0...
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texId, 0);
@@ -469,8 +453,6 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
 
 	// ******************* OVR eye configurations ************************
 	RetinaManager::eyeFov[0] = RetinaManager::hmdDesc.DefaultEyeFov[0];
@@ -502,16 +484,8 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 	RetinaManager::eyeTexture[1].OGL.Header.RenderViewport.Pos.x = (texSize.w + 1) / 2;
 	// ******************* /OVR eye configurations ************************
 
-
-
 	// *********************** Initialize eDVS *************************************
-	RetinaManager::eDVS[0].initialize(RetinaManager::paramManager.getMidColor(),
-			RetinaManager::paramManager.getOnColor(), paramManager.getOffColor());
-	RetinaManager::eDVS[0].setGL(pWindow, RetinaManager::vertexbuffer, RetinaManager::colorbuffer, RetinaManager::programID);
-
-	RetinaManager::eDVS[1].initialize(RetinaManager::paramManager.getMidColor(),
-			RetinaManager::paramManager.getOnColor(), paramManager.getOffColor());
-	RetinaManager::eDVS[1].setGL(pWindow, RetinaManager::vertexbuffer, RetinaManager::colorbuffer, RetinaManager::programID);
+	this->CreateEDVSGL();
 	// *********************** /Initialize eDVS *************************************
 
 	RetinaManager::State = Play;
@@ -520,37 +494,7 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 
 
 
-void RetinaManager::changeFile(char *edvsFileName_left,char *edvsFileName_right){
-	RetinaManager::setEdvsFileNameRight(edvsFileName_right);
-	RetinaManager::setEdvsFileNameLeft(edvsFileName_left);
-	switch (RetinaManager::paramManager.getMode()) {
-		case 1: {
-			RetinaManager::edvsFile[0] = fopen(edvsFileName_left, "w");
-			RetinaManager::edvsFile[1] = fopen(edvsFileName_right, "w");
-			break;
-		}
-		case 2: {
-			RetinaManager::edvsFile[0] = fopen(edvsFileName_left, "r");
-			RetinaManager::edvsFile[1] = fopen(edvsFileName_right, "r");
-			break;
-		}
-		case 3: {
-			printf("Not implemented yet");
-			break;
-		}
-		case 4: {
-			RetinaManager::edvsFile[0] = fopen(edvsFileName_left, "w");
-			RetinaManager::edvsFile[1] = fopen(edvsFileName_right, "w");
-			break;
-		}
-	}
-	RetinaManager::eDVS[0].initialize(RetinaManager::paramManager.getMidColor(),
-			RetinaManager::paramManager.getOnColor(), paramManager.getOffColor());
-	RetinaManager::eDVS[1].initialize(RetinaManager::paramManager.getMidColor(),
-			RetinaManager::paramManager.getOnColor(), paramManager.getOffColor());
-}
-
-void RetinaManager::setMode(int mode){
+void RetinaManager::setMode(int mode) {
 	paramManager.setMode(mode);
 	switch (mode) {
 		case 0: {
@@ -661,36 +605,17 @@ void RetinaManager::KeyControl() {
 	if ((glfwGetKey(RetinaManager::pWindow, GLFW_KEY_F2) == GLFW_PRESS)) {
 		RetinaManager::loadSettings();
 	}
-	/*
-	 if ((glfwGetKey(RetinaManager::pWindow, GLFW_KEY_F3) == GLFW_PRESS)) {
-	 if (RetinaManager::paramManager.mode == 0 && RetinaManager::paramManager.mode != 1) {
-	 RetinaManager::paramManager.mode = 1;
-	 RetinaManager::edvsLeft = fopen(DEFAULT_EDVSDATA_LEFT_FILENAME,
-	 "w");
-	 RetinaManager::edvsRight = fopen(DEFAULT_EDVSDATA_RIGHT_FILENAME,
-	 "w");
-	 }
-	 }
-
-	 if ((glfwGetKey(RetinaManager::pWindow, GLFW_KEY_F4) == GLFW_PRESS)) {
-	 if (RetinaManager::paramManager.mode == 1) {
-	 RetinaManager::paramManager.mode = 0;
-	 fclose(RetinaManager::edvsLeft);
-	 fclose(RetinaManager::edvsRight);
-	 }
-	 }
-	 */
 }
 
-void RetinaManager::setRedGreen(char *colorVal){
+void RetinaManager::setRedGreen(char *colorVal) {
 	glm::vec3 midColor;
 	glm::vec3 onColor;
 	glm::vec3 offColor;
-	if(atoi(colorVal)){
+	if (atoi(colorVal)) {
 		midColor = glm::vec3(0.5f, 0.5f, 0.5f);
 		onColor = glm::vec3(1.0f, 1.0f, 1.0f);
 		offColor = glm::vec3(0.0f, 0.0f, 0.0f);
-	}else{
+	} else {
 // TODO: 1. CHANGE 2nd color, 2nd. MAKE DEFINES? (2. not necissary)...
 		midColor = glm::vec3(0.5f, 0.5f, 0.5f);
 		onColor = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -701,45 +626,84 @@ void RetinaManager::setRedGreen(char *colorVal){
 	this->getParamManager().setOffColor(offColor);
 }
 
+int RetinaManager::setFile(char *filename) {
 
-void RetinaManager::setFile(char *filename){
-	std::string edvsFileName_left;
-	std::string edvsFileName_right;
-	edvsFileName_left = (std::string)EDVS_DATA_FOLDER_NAME
-			+ (std::string)filename + (std::string)FILENAME_EXTENSION_LEFT;
-	edvsFileName_right = (std::string)EDVS_DATA_FOLDER_NAME
-			+ (std::string)filename + (std::string)FILENAME_EXTENSION_RIGHT;
-
-	/*
+	std::string edvsFileNameS_left;
+	std::string edvsFileNameS_right;
 	char *edvsFileName_left;
 	char *edvsFileName_right;
-	strcpy(edvsFileName_left, EDVS_DATA_FOLDER_NAME);
-	strcpy(edvsFileName_right, EDVS_DATA_FOLDER_NAME);
-	strcat(edvsFileName_left,filename);
-	strcat(edvsFileName_right, filename);
-	strcat(edvsFileName_left, FILENAME_EXTENSION_LEFT);
-	strcat(edvsFileName_right, FILENAME_EXTENSION_RIGHT);
-	*/
 
-	this->changeFile((char *)edvsFileName_left.c_str(),(char *)edvsFileName_right.c_str());
+	// Cast from char * to string, then concatenating, then cast back to char* (yes, strcat would have also worked)
+	edvsFileNameS_left = (std::string) EDVS_DATA_FOLDER_NAME + (std::string) filename
+			+ (std::string) FILENAME_EXTENSION_LEFT;
+	edvsFileNameS_right = (std::string) EDVS_DATA_FOLDER_NAME + (std::string) filename
+			+ (std::string) FILENAME_EXTENSION_RIGHT;
+
+	edvsFileName_left = (char *) edvsFileNameS_left.c_str();
+	edvsFileName_right = (char *) edvsFileNameS_right.c_str();
+
+	RetinaManager::setEdvsFileNameRight(edvsFileName_right);
+	RetinaManager::setEdvsFileNameLeft(edvsFileName_left);
+
+	// Close old file
+	if(this->edvsFile[0] != NULL) fclose(this->edvsFile[0]);
+	if(this->edvsFile[1] != NULL) fclose(this->edvsFile[1]);
+	switch (RetinaManager::paramManager.getMode()) {
+		case 1: {
+			RetinaManager::edvsFile[0] = fopen(edvsFileName_left, "w");
+			RetinaManager::edvsFile[1] = fopen(edvsFileName_right, "w");
+			break;
+		}case 2:{
+			RetinaManager::edvsFile[0] = fopen(edvsFileName_left, "r");
+			RetinaManager::edvsFile[1] = fopen(edvsFileName_right, "r");
+			break;
+		}
+		case 3: {
+			printf("Not implemented yet");
+			break;
+		}
+		case 4: {
+			RetinaManager::edvsFile[0] = fopen(edvsFileName_left, "w");
+			RetinaManager::edvsFile[1] = fopen(edvsFileName_right, "w");
+			break;
+		}
+	}
+	this->CreateEDVSGL();
+	if(RetinaManager::edvsFile[0] != NULL && RetinaManager::edvsFile[1] != NULL){
+		return 1;
+	} else{
+		return 0;
+	}
 }
 
 
 
-
-void RetinaManager::setControl(char *control){
-	if(strcmp(control,PLAY)){
-		RetinaManager::State = RetinaManager::State & ~Pause;
-	}else if(strcmp(control, PAUSE)){
-		RetinaManager::State = RetinaManager::State | Pause;
-	}
-	else if(strcmp(control, STOP)){
-		RetinaManager::State = RetinaManager::State | Stop;
+void RetinaManager::setControl(char *control) {
+	if (strcmp(control, PLAY)) {
+		RetinaManager::State = Play;
+	} else if (strcmp(control, PAUSE)) {
+		RetinaManager::State = Pause;
+	} else if (strcmp(control, STOP)) {
+		RetinaManager::State = Stop;
 	}
 }
 
 
-void RetinaManager::StopVideo(){
-	fclose(this->edvsFile[0]);
-	fclose(this->edvsFile[1]);
+
+void RetinaManager::CreateEDVSGL(){
+	// *********************** Initialize eDVS *************************************
+	if(RetinaManager::eDVS[0] != NULL)	delete(RetinaManager::eDVS[0]);
+	if(RetinaManager::eDVS[1] != NULL) delete(RetinaManager::eDVS[1]);
+	RetinaManager::eDVS[0] = new eDVSGL;
+	RetinaManager::eDVS[1] = new eDVSGL;
+	RetinaManager::eDVS[0]->initialize(RetinaManager::paramManager.getMidColor(),
+			RetinaManager::paramManager.getOnColor(), paramManager.getOffColor());
+	RetinaManager::eDVS[0]->setGL(pWindow, RetinaManager::vertexbuffer, RetinaManager::colorbuffer,
+			RetinaManager::programID);
+
+	RetinaManager::eDVS[1]->initialize(RetinaManager::paramManager.getMidColor(),
+			RetinaManager::paramManager.getOnColor(), paramManager.getOffColor());
+	RetinaManager::eDVS[1]->setGL(pWindow, RetinaManager::vertexbuffer, RetinaManager::colorbuffer,
+			RetinaManager::programID);
+	// *********************** /Initialize eDVS *************************************
 }
