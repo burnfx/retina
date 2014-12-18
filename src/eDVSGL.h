@@ -12,6 +12,7 @@
 #include <iostream>
 #include <vector>
 #include <ctime>
+#include <stdio.h>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -44,6 +45,7 @@ private:
 	GLuint m_programID;
 	GLFWwindow* m_window;
 
+
 	int m_updateInterval;
 	bool m_eof;
 	unsigned long m_accumulateBegin;
@@ -68,6 +70,8 @@ public:
 	void updateEvent(FILE * file, int updateInterval, int displayInterval);
 
 	void draw(float tDecay);
+
+
 };
 
 #endif /* defined(__RetinaRift__eDVSGL__) */

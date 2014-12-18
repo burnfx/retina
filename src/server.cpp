@@ -36,7 +36,7 @@ void *handleGUI(void * paramsd) {
         	// read command and parameter
         	if (sscanf(line, "%s %s", cmd, param) > 0) {
         		// searching for a valid command sent from the client
-        		myMutex.lock();
+        		//myMutex.lock();
         		if (strcmp(cmd, "-quit")==0)  {
         			printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
         			break;
@@ -69,12 +69,15 @@ void *handleGUI(void * paramsd) {
         			retinaManager->setFile(param);
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
 				}
-
+        		else if (strcmp(cmd, "-time") == 0){
+        			retinaManager->setTime(param);
+        			printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
+        		}
         		else if (strcmp(cmd, "-redgreen") == 0) {
         			retinaManager->setRedGreen(param);
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
 				}
-        		myMutex.unlock();
+        		//myMutex.unlock();
 
         	} else {
         		printf("command not found: %s \n",line);

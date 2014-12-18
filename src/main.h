@@ -11,10 +11,9 @@
 #define FILENAME_EXTENSION_RIGHT "_right.txt"
 #define FILENAME_EXTENSION_LEFT "_left.txt"
 
-#define SHOW_ON_OCULUS true
 #define DEFAULT_MODE 2
 
-#define RECORD_DURATION 10 //sec
+//#define RECORD_DURATION 10 //sec
 #define DEFAULT_MODE 2
 #define OCULUS_DK_VERSION_DEBUG 2
 

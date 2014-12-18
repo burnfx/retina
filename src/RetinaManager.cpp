@@ -25,7 +25,7 @@ RetinaManager::~RetinaManager() {
 
 int RetinaManager::isTimeElapsed() {
 	RetinaManager::recordCounter++;
-	if (recordCounter > RECORD_DURATION * 60) {
+	if (RetinaManager::recordCounter > RetinaManager::recordPlayTime * 60) {
 		return true;
 	}
 	return false;
@@ -141,7 +141,6 @@ void RetinaManager::UpdateEvents(int eyeIndex) {
 				RetinaManager::eventNum[eyeIndex]);
 	}
 
-
 	switch (RetinaManager::paramManager.getMode()) {
 		case 0: {
 			RetinaManager::eDVS[eyeIndex]->updateEvent(RetinaManager::events[eyeIndex],
@@ -237,8 +236,6 @@ void RetinaManager::render() {
 
 	RetinaManager::measureFPS();
 
-
-
 	// Bind FBO
 	glBindFramebuffer(GL_FRAMEBUFFER, RetinaManager::FBOId);
 	// Clear the background
@@ -273,7 +270,6 @@ FileAndWindowStateType RetinaManager::getFileAndWindowState() {
 		tempState = tempState & ~CloseWindowRequest;
 	}
 
-
 	return tempState;
 }
 
@@ -281,6 +277,9 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 	// Init File Names
 	RetinaManager::edvsFileName_left = DEFAULT_EDVSDATA_LEFT_FILENAME;
 	RetinaManager::edvsFileName_right = DEFAULT_EDVSDATA_RIGHT_FILENAME;
+
+	//TODO: ned hier
+	this->useOculus = false;
 
 	if (initModeViaKeyboard) {
 		int nTries = 0;
@@ -356,20 +355,20 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 	GLFWmonitor *monitor;
 	if (count > 1) { // This means, there is a second monitor
 		monitor = monitors[count - 1]; // this will make Fullscreen paramManager.mode on last monitor. This should be the Occulus!
-		printf("\n\n\n");
+		printf("\n\n");
 		printf(glfwGetMonitorName(monitor));
-		printf("\n\n\n");
+		printf("\n\n");
 	} else {
 		monitor = NULL;
 	}
 	// Note: The second last param specifies wether to open a new pWindow (NULL) or create the pWindow in full screen paramManager.mode
 	// at the specified pWindow.
-#ifndef SHOW_ON_OCULUS
-	pWindow = glfwCreateWindow(clientSize.w, clientSize.h, "eDVS: FPS=0", monitor, NULL);
-#else
-	pWindow = glfwCreateWindow(clientSize.w, clientSize.h, "eDVS: FPS=0", NULL,
-	NULL);
-#endif
+	if (RetinaManager::isUsingOculus()) {
+		pWindow = glfwCreateWindow(clientSize.w, clientSize.h, "eDVS: FPS=0", monitor, NULL);
+	} else {
+		pWindow = glfwCreateWindow(clientSize.w, clientSize.h, "eDVS: FPS=0", NULL, NULL);
+	}
+
 	if (pWindow == NULL) {
 		fprintf( stderr, "Failed to open GLFW pWindow. Make sure your graphic card supports OpenGL 3.3+. \n");
 		glfwTerminate();
@@ -491,17 +490,16 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 	return 1;
 }
 
-
-
 void RetinaManager::setMode(int mode) {
-	paramManager.setMode(mode);
+	//RetinaManager::setControl(STOP);
+	//RetinaManager::setFile(RetinaManager::edvsFileName);
 	//myMutex.lock(); // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
 	switch (mode) {
 		case 0: {
 
 			//Initialize eDVS
-			RetinaManager::streamHandle[1] = edvs_open("/dev/ttyUSB0?baudrate=4000000");
-			RetinaManager::streamHandle[0] = edvs_open("/dev/ttyUSB1?baudrate=4000000");
+			RetinaManager::streamHandle[0] = edvs_open("/dev/ttyUSB0?baudrate=4000000");
+			RetinaManager::streamHandle[1] = edvs_open("/dev/ttyUSB1?baudrate=4000000");
 
 			RetinaManager::events[0] = (edvs_event_t*) malloc(RetinaManager::num_max_events * sizeof(edvs_event_t));
 			RetinaManager::events[1] = (edvs_event_t*) malloc(RetinaManager::num_max_events * sizeof(edvs_event_t));
@@ -511,8 +509,8 @@ void RetinaManager::setMode(int mode) {
 		case 1: {
 			//Initialize eDVS
 
-			RetinaManager::streamHandle[1] = edvs_open("/dev/ttyUSB0?baudrate=4000000");
-			RetinaManager::streamHandle[0] = edvs_open("/dev/ttyUSB1?baudrate=4000000");
+			RetinaManager::streamHandle[0] = edvs_open("/dev/ttyUSB0?baudrate=4000000");
+			RetinaManager::streamHandle[1] = edvs_open("/dev/ttyUSB1?baudrate=4000000");
 
 			RetinaManager::events[0] = (edvs_event_t*) malloc(RetinaManager::num_max_events * sizeof(edvs_event_t));
 			RetinaManager::events[1] = (edvs_event_t*) malloc(RetinaManager::num_max_events * sizeof(edvs_event_t));
@@ -530,8 +528,8 @@ void RetinaManager::setMode(int mode) {
 			break;
 		}
 		case 4: {
-			RetinaManager::streamHandle[1] = edvs_open("/dev/ttyUSB0?baudrate=4000000");
-			RetinaManager::streamHandle[0] = edvs_open("/dev/ttyUSB1?baudrate=4000000");
+			RetinaManager::streamHandle[0] = edvs_open("/dev/ttyUSB0?baudrate=4000000");
+			RetinaManager::streamHandle[1] = edvs_open("/dev/ttyUSB1?baudrate=4000000");
 
 			RetinaManager::events[0] = (edvs_event_t*) malloc(RetinaManager::num_max_events * sizeof(edvs_event_t));
 			RetinaManager::events[1] = (edvs_event_t*) malloc(RetinaManager::num_max_events * sizeof(edvs_event_t));
@@ -540,6 +538,9 @@ void RetinaManager::setMode(int mode) {
 			break;
 		}
 	}
+	RetinaManager::paramManager.setMode(mode);
+
+
 	// this->CreateEDVSGL(); //TODO: Darf hier nicht stehen, gibt bei der Init Probleme, weil es zu früh aufgerufen wird, bevor
 	// verexbuffer etc gesetzt ist. Frage ist ob es für später hier NÖTIG ist. --> TESTEN!
 	//myMutex.unlock(); // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
@@ -603,8 +604,8 @@ void RetinaManager::KeyControl() {
 		RetinaManager::setControl(PLAY);
 	}
 	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_X) == GLFW_PRESS) {
-			RetinaManager::setControl(STOP);
-		}
+		RetinaManager::setControl(STOP);
+	}
 
 	if ((glfwGetKey(RetinaManager::pWindow, GLFW_KEY_A) == GLFW_PRESS)
 			& (RetinaManager::paramManager.getUpdateInterval() < 20000000)) {
@@ -617,6 +618,10 @@ void RetinaManager::KeyControl() {
 
 	if ((glfwGetKey(RetinaManager::pWindow, GLFW_KEY_F2) == GLFW_PRESS)) {
 		RetinaManager::loadSettings();
+	}
+
+	if ((glfwGetKey(RetinaManager::pWindow, GLFW_KEY_O) == GLFW_PRESS)) {
+		RetinaManager::tryToUseOculus();
 	}
 }
 
@@ -655,18 +660,17 @@ int RetinaManager::setFile(char *filename) {
 	edvsFileName_left = (char *) edvsFileNameS_left.c_str();
 	edvsFileName_right = (char *) edvsFileNameS_right.c_str();
 
-
 	// myMutex.lock(); // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
 	// set corresponding left and right filename
 	RetinaManager::setEdvsFileNameRight(edvsFileName_right);
 	RetinaManager::setEdvsFileNameLeft(edvsFileName_left);
 
 	// Close old file
-	if(this->edvsFile[0] != NULL) {
+	if (this->edvsFile[0] != NULL) {
 		fclose(this->edvsFile[0]);
 		RetinaManager::edvsFile[0] = NULL;
 	}
-	if(this->edvsFile[1] != NULL) {
+	if (this->edvsFile[1] != NULL) {
 		fclose(this->edvsFile[1]);
 		RetinaManager::edvsFile[0] = NULL;
 	}
@@ -675,7 +679,8 @@ int RetinaManager::setFile(char *filename) {
 			RetinaManager::edvsFile[0] = fopen(edvsFileName_left, "w");
 			RetinaManager::edvsFile[1] = fopen(edvsFileName_right, "w");
 			break;
-		}case 2:{
+		}
+		case 2: {
 			RetinaManager::edvsFile[0] = fopen(edvsFileName_left, "r");
 			RetinaManager::edvsFile[1] = fopen(edvsFileName_right, "r");
 			break;
@@ -693,20 +698,18 @@ int RetinaManager::setFile(char *filename) {
 
 	this->CreateEDVSGL();
 	// myMutex.unlock(); // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
-	if(RetinaManager::edvsFile[0] != NULL && RetinaManager::edvsFile[1] != NULL){
+	if (RetinaManager::edvsFile[0] != NULL && RetinaManager::edvsFile[1] != NULL) {
 		return 1;
-	} else{
+	} else {
 		return 0;
 	}
 }
-
-
 
 void RetinaManager::setControl(char *control) {
 	// myMutex.lock(); // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
 	if (strcmp(control, PLAY) == 0) {
 
-		if(this->control == Stop) this->setFile("edvs"); // Reinitializes eDVSGL objects (for next Play)
+		if (this->control == Stop) this->setFile("edvs"); // Reinitializes eDVSGL objects (for next Play)
 		this->control = Play;
 	} else if (strcmp(control, PAUSE) == 0) {
 		this->control = Pause;
@@ -716,32 +719,30 @@ void RetinaManager::setControl(char *control) {
 	// myMutex.unlock(); // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
 }
 
-
-
-void RetinaManager::CreateEDVSGL(){
+void RetinaManager::CreateEDVSGL() {
 	// *********************** Initialize eDVS *************************************
-	if(RetinaManager::eDVS[0] != NULL){
-		delete(RetinaManager::eDVS[0]);
+	if (RetinaManager::eDVS[0] != NULL) {
+		delete (RetinaManager::eDVS[0]);
 	}
-		RetinaManager::eDVS[0] = new eDVSGL;
-		RetinaManager::eDVS[0]->initialize(RetinaManager::paramManager.getMidColor(),
-				RetinaManager::paramManager.getOnColor(), paramManager.getOffColor());
-		RetinaManager::eDVS[0]->setGL(pWindow, RetinaManager::vertexbuffer, RetinaManager::colorbuffer,
-				RetinaManager::programID);
+	RetinaManager::eDVS[0] = new eDVSGL;
+	RetinaManager::eDVS[0]->initialize(RetinaManager::paramManager.getMidColor(),
+			RetinaManager::paramManager.getOnColor(), paramManager.getOffColor());
+	RetinaManager::eDVS[0]->setGL(pWindow, RetinaManager::vertexbuffer, RetinaManager::colorbuffer,
+			RetinaManager::programID);
 
-	if(RetinaManager::eDVS[1] != NULL) {
-		delete(RetinaManager::eDVS[1]);
+	if (RetinaManager::eDVS[1] != NULL) {
+		delete (RetinaManager::eDVS[1]);
 	}
-		RetinaManager::eDVS[1] = new eDVSGL;
-		RetinaManager::eDVS[1]->initialize(RetinaManager::paramManager.getMidColor(),
-				RetinaManager::paramManager.getOnColor(), paramManager.getOffColor());
-		RetinaManager::eDVS[1]->setGL(pWindow, RetinaManager::vertexbuffer, RetinaManager::colorbuffer,
-				RetinaManager::programID);
+	RetinaManager::eDVS[1] = new eDVSGL;
+	RetinaManager::eDVS[1]->initialize(RetinaManager::paramManager.getMidColor(),
+			RetinaManager::paramManager.getOnColor(), paramManager.getOffColor());
+	RetinaManager::eDVS[1]->setGL(pWindow, RetinaManager::vertexbuffer, RetinaManager::colorbuffer,
+			RetinaManager::programID);
 	// *********************** /Initialize eDVS *************************************
 }
 
 // TODO: Typ ändern
-FileAndWindowStateType RetinaManager::getFileState(){
+FileAndWindowStateType RetinaManager::getFileState() {
 	FileAndWindowStateType tempState = Default;
 	if (RetinaManager::eDVS[0]->eof() || RetinaManager::eDVS[1]->eof()) {
 		tempState = tempState | EndOfFile;
@@ -749,4 +750,41 @@ FileAndWindowStateType RetinaManager::getFileState(){
 		tempState = tempState & ~EndOfFile;
 	}
 	return tempState;
+}
+
+int RetinaManager::tryToUseOculus() {
+	int count;
+	GLFWmonitor** monitors = glfwGetMonitors(&count);
+	GLFWmonitor *monitor;
+	if (count > 1) { // This means, there is a second monitor
+		monitor = monitors[count - 1]; // this will make Fullscreen paramManager.mode on last monitor. This should be the Occulus!
+		printf("\n\n");
+		printf(glfwGetMonitorName(monitor));
+		printf("\n\n");
+		this->useOculus = true;
+	} else {
+		monitor = NULL;
+		this->useOculus = false;
+	}
+	ovrSizei clientSize;
+	clientSize.w = RetinaManager::hmdDesc.Resolution.w;
+	clientSize.h = RetinaManager::hmdDesc.Resolution.h;
+	// Note: The second last param specifies wether to open a new pWindow (NULL) or create the pWindow in full screen paramManager.mode
+	// at the specified pWindow.
+	if (this->useOculus) {
+		pWindow = glfwCreateWindow(clientSize.w, clientSize.h, "eDVS: FPS=0", monitor, NULL);
+	} else {
+		pWindow = glfwCreateWindow(clientSize.w, clientSize.h, "eDVS: FPS=0", NULL, NULL);
+	}
+
+	if (pWindow == NULL) {
+		fprintf( stderr, "Failed to open GLFW pWindow. Make sure your graphic card supports OpenGL 3.3+. \n");
+		glfwTerminate();
+		return 0;
+	}
+	glfwMakeContextCurrent(pWindow);
+	// Ensure we can capture the escape key being pressed below
+	glfwSetInputMode(pWindow, GLFW_STICKY_KEYS, GL_TRUE);
+
+	return this->useOculus;
 }

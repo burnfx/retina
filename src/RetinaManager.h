@@ -28,9 +28,13 @@
 class RetinaManager {
 private:
 	int recordCounter;
+	float recordPlayTime; //in sec e.g: 5.5
+
+	bool useOculus;
 
 	char *edvsFileName_left;
 	char *edvsFileName_right;
+	char *edvsFileName;
 
 	const size_t num_max_events = 1024;
 
@@ -58,7 +62,8 @@ private:
 	GLuint MatrixID;
 
 	eDVSGL *eDVS[2];
-	FILE * edvsFile[2];
+	FILE *edvsFile[2];
+
 
 	ParameterManager paramManager;
 	GLFWwindow *pWindow;
@@ -150,16 +155,16 @@ public:
 		this->setMode(atoi(mode));
 	}
 	void setcDecay(char *cDecay){
-		this->getParamManager().setDecay((float)atoi(cDecay));
+		this->getParamManager().setDecay(atof(cDecay));
 	}
 	void setUpdateInterval(char *updateInterval){
 		this->getParamManager().setUpdateInterval(atoi(updateInterval));
 	}
 	void setTranslateBack_Offset(char *translate_back){
-		this->getParamManager().setTranslateBackOffset((float)atoi(translate_back));
+		this->getParamManager().setTranslateBackOffset(atof(translate_back));
 	}
 	void setViewport_Offset(char *viewport){
-		this->getParamManager().setViewportOffset((float)atoi(viewport));
+		this->getParamManager().setViewportOffset(atof(viewport));
 	}
 
 	void setRedGreen(char *colorVal);
@@ -177,6 +182,19 @@ public:
 	//}
 
 	FileAndWindowStateType getFileState();
+
+	bool isUsingOculus() const {
+		return useOculus;
+	}
+
+	int tryToUseOculus();
+
+	void setTime(char *time){
+		this->recordPlayTime = atof(time);
+	}
+	float getTime(){
+		return this->recordPlayTime;
+	}
 };
 
 #endif /* RETINAMANAGER_H_ */
