@@ -13,6 +13,8 @@
 
 #define getSignForEye(x) ((x)==0 ? (1) : (-1))
 
+// std::mutex myMutex; // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
+
 RetinaManager::RetinaManager() {
 
 }
@@ -129,6 +131,17 @@ void RetinaManager::writeEventsToFile(FILE * file, edvs_event_t* event, int even
 
 void RetinaManager::UpdateEvents(int eyeIndex) {
 	// Read events in different modes
+
+	if (RetinaManager::paramManager.getMode() == 0 || RetinaManager::paramManager.getMode() == 1
+			|| RetinaManager::paramManager.getMode() == 4) {
+		RetinaManager::ReadEventsFromSensor();
+	}
+	if (RetinaManager::paramManager.getMode() == 1 || RetinaManager::paramManager.getMode() == 4) {
+		RetinaManager::writeEventsToFile(RetinaManager::edvsFile[0], RetinaManager::events[0],
+				RetinaManager::eventNum[eyeIndex]);
+	}
+
+
 	switch (RetinaManager::paramManager.getMode()) {
 		case 0: {
 			RetinaManager::eDVS[eyeIndex]->updateEvent(RetinaManager::events[eyeIndex],
@@ -148,6 +161,7 @@ void RetinaManager::UpdateEvents(int eyeIndex) {
 						RetinaManager::paramManager.getDisplayInterval());
 			} else {
 				fclose(RetinaManager::edvsFile[eyeIndex]);
+				RetinaManager::edvsFile[eyeIndex] = NULL; // sadly, fclose does not do this automatically.
 			}
 			break;
 
@@ -219,22 +233,12 @@ void RetinaManager::renderOvrEyes() {
 	ovrHmd_EndFrame((RetinaManager::hmd));
 }
 
-RetinaRenderReturnType RetinaManager::render() {
+void RetinaManager::render() {
 
 	RetinaManager::measureFPS();
-	if (RetinaManager::paramManager.getMode() == 0 || RetinaManager::paramManager.getMode() == 1
-			|| RetinaManager::paramManager.getMode() == 4) {
-		RetinaManager::ReadEventsFromSensor();
-	}
-	if (RetinaManager::paramManager.getMode() == 1 || RetinaManager::paramManager.getMode() == 4) {
-		RetinaManager::writeEventsToFile(RetinaManager::edvsFile[0], RetinaManager::events[0],
-				RetinaManager::eventNum[0]);
-		RetinaManager::writeEventsToFile(RetinaManager::edvsFile[1], RetinaManager::events[1],
-				RetinaManager::eventNum[1]);
-	}
 
-	RetinaManager::UpdateEvents(0);
-	RetinaManager::UpdateEvents(1);
+
+
 	// Bind FBO
 	glBindFramebuffer(GL_FRAMEBUFFER, RetinaManager::FBOId);
 	// Clear the background
@@ -251,29 +255,24 @@ RetinaRenderReturnType RetinaManager::render() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
-	glfwPollEvents();
 
-	return RetinaManager::getRenderReturnState();
+	return;
 }
 
-RetinaRenderReturnType RetinaManager::getRenderReturnState() {
-	RetinaRenderReturnType tempState = Default;
-
+FileAndWindowStateType RetinaManager::getFileAndWindowState() {
+	FileAndWindowStateType tempState = Default;
+	glfwPollEvents();
 	if (RetinaManager::paramManager.getMode() == 4 && RetinaManager::isTimeElapsed()) {
 		tempState = tempState | RecordTimeElapsed;
 	} else {
 		tempState = tempState & ~RecordTimeElapsed;
 	}
-	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS || glfwWindowShouldClose(RetinaManager::pWindow)) {
+	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS || glfwWindowShouldClose(pWindow)) {
 		tempState = tempState | CloseWindowRequest;
 	} else {
 		tempState = tempState & ~CloseWindowRequest;
 	}
-	if (RetinaManager::eDVS[0]->eof() || RetinaManager::eDVS[1]->eof()) {
-		tempState = tempState | EndOfFile;
-	} else {
-		tempState = tempState & ~EndOfFile;
-	}
+
 
 	return tempState;
 }
@@ -488,7 +487,7 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 	this->CreateEDVSGL();
 	// *********************** /Initialize eDVS *************************************
 
-	RetinaManager::State = Play;
+	RetinaManager::control = Stop;
 	return 1;
 }
 
@@ -496,6 +495,7 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 
 void RetinaManager::setMode(int mode) {
 	paramManager.setMode(mode);
+	//myMutex.lock(); // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
 	switch (mode) {
 		case 0: {
 
@@ -540,6 +540,9 @@ void RetinaManager::setMode(int mode) {
 			break;
 		}
 	}
+	// this->CreateEDVSGL(); //TODO: Darf hier nicht stehen, gibt bei der Init Probleme, weil es zu früh aufgerufen wird, bevor
+	// verexbuffer etc gesetzt ist. Frage ist ob es für später hier NÖTIG ist. --> TESTEN!
+	//myMutex.unlock(); // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
 }
 
 void RetinaManager::TerminateWindow() {
@@ -593,6 +596,16 @@ void RetinaManager::KeyControl() {
 		RetinaManager::paramManager.decUpdateInterval();
 	}
 
+	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_PAUSE) == GLFW_PRESS) {
+		RetinaManager::setControl(PAUSE);
+	}
+	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_P) == GLFW_PRESS) {
+		RetinaManager::setControl(PLAY);
+	}
+	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_X) == GLFW_PRESS) {
+			RetinaManager::setControl(STOP);
+		}
+
 	if ((glfwGetKey(RetinaManager::pWindow, GLFW_KEY_A) == GLFW_PRESS)
 			& (RetinaManager::paramManager.getUpdateInterval() < 20000000)) {
 		RetinaManager::paramManager.incUpdateInterval();
@@ -613,8 +626,8 @@ void RetinaManager::setRedGreen(char *colorVal) {
 	glm::vec3 offColor;
 	if (atoi(colorVal)) {
 		midColor = glm::vec3(0.5f, 0.5f, 0.5f);
-		onColor = glm::vec3(1.0f, 1.0f, 1.0f);
-		offColor = glm::vec3(0.0f, 0.0f, 0.0f);
+		onColor = glm::vec3(1.0f, 0.0f, 0.0f);
+		offColor = glm::vec3(0.0f, 1.0f, 0.0f);
 	} else {
 // TODO: 1. CHANGE 2nd color, 2nd. MAKE DEFINES? (2. not necissary)...
 		midColor = glm::vec3(0.5f, 0.5f, 0.5f);
@@ -642,12 +655,21 @@ int RetinaManager::setFile(char *filename) {
 	edvsFileName_left = (char *) edvsFileNameS_left.c_str();
 	edvsFileName_right = (char *) edvsFileNameS_right.c_str();
 
+
+	// myMutex.lock(); // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
+	// set corresponding left and right filename
 	RetinaManager::setEdvsFileNameRight(edvsFileName_right);
 	RetinaManager::setEdvsFileNameLeft(edvsFileName_left);
 
 	// Close old file
-	if(this->edvsFile[0] != NULL) fclose(this->edvsFile[0]);
-	if(this->edvsFile[1] != NULL) fclose(this->edvsFile[1]);
+	if(this->edvsFile[0] != NULL) {
+		fclose(this->edvsFile[0]);
+		RetinaManager::edvsFile[0] = NULL;
+	}
+	if(this->edvsFile[1] != NULL) {
+		fclose(this->edvsFile[1]);
+		RetinaManager::edvsFile[0] = NULL;
+	}
 	switch (RetinaManager::paramManager.getMode()) {
 		case 1: {
 			RetinaManager::edvsFile[0] = fopen(edvsFileName_left, "w");
@@ -668,7 +690,9 @@ int RetinaManager::setFile(char *filename) {
 			break;
 		}
 	}
+
 	this->CreateEDVSGL();
+	// myMutex.unlock(); // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
 	if(RetinaManager::edvsFile[0] != NULL && RetinaManager::edvsFile[1] != NULL){
 		return 1;
 	} else{
@@ -679,31 +703,50 @@ int RetinaManager::setFile(char *filename) {
 
 
 void RetinaManager::setControl(char *control) {
+	// myMutex.lock(); // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
 	if (strcmp(control, PLAY) == 0) {
-		RetinaManager::State = Play;
+
+		if(this->control == Stop) this->setFile("edvs"); // Reinitializes eDVSGL objects (for next Play)
+		this->control = Play;
 	} else if (strcmp(control, PAUSE) == 0) {
-		RetinaManager::State = Pause;
+		this->control = Pause;
 	} else if (strcmp(control, STOP) == 0) {
-		RetinaManager::State = Stop;
+		this->control = Stop;
 	}
+	// myMutex.unlock(); // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
 }
 
 
 
 void RetinaManager::CreateEDVSGL(){
 	// *********************** Initialize eDVS *************************************
-	if(RetinaManager::eDVS[0] != NULL)	delete(RetinaManager::eDVS[0]);
-	if(RetinaManager::eDVS[1] != NULL) delete(RetinaManager::eDVS[1]);
-	RetinaManager::eDVS[0] = new eDVSGL;
-	RetinaManager::eDVS[1] = new eDVSGL;
-	RetinaManager::eDVS[0]->initialize(RetinaManager::paramManager.getMidColor(),
-			RetinaManager::paramManager.getOnColor(), paramManager.getOffColor());
-	RetinaManager::eDVS[0]->setGL(pWindow, RetinaManager::vertexbuffer, RetinaManager::colorbuffer,
-			RetinaManager::programID);
+	if(RetinaManager::eDVS[0] != NULL){
+		delete(RetinaManager::eDVS[0]);
+	}
+		RetinaManager::eDVS[0] = new eDVSGL;
+		RetinaManager::eDVS[0]->initialize(RetinaManager::paramManager.getMidColor(),
+				RetinaManager::paramManager.getOnColor(), paramManager.getOffColor());
+		RetinaManager::eDVS[0]->setGL(pWindow, RetinaManager::vertexbuffer, RetinaManager::colorbuffer,
+				RetinaManager::programID);
 
-	RetinaManager::eDVS[1]->initialize(RetinaManager::paramManager.getMidColor(),
-			RetinaManager::paramManager.getOnColor(), paramManager.getOffColor());
-	RetinaManager::eDVS[1]->setGL(pWindow, RetinaManager::vertexbuffer, RetinaManager::colorbuffer,
-			RetinaManager::programID);
+	if(RetinaManager::eDVS[1] != NULL) {
+		delete(RetinaManager::eDVS[1]);
+	}
+		RetinaManager::eDVS[1] = new eDVSGL;
+		RetinaManager::eDVS[1]->initialize(RetinaManager::paramManager.getMidColor(),
+				RetinaManager::paramManager.getOnColor(), paramManager.getOffColor());
+		RetinaManager::eDVS[1]->setGL(pWindow, RetinaManager::vertexbuffer, RetinaManager::colorbuffer,
+				RetinaManager::programID);
 	// *********************** /Initialize eDVS *************************************
+}
+
+// TODO: Typ ändern
+FileAndWindowStateType RetinaManager::getFileState(){
+	FileAndWindowStateType tempState = Default;
+	if (RetinaManager::eDVS[0]->eof() || RetinaManager::eDVS[1]->eof()) {
+		tempState = tempState | EndOfFile;
+	} else {
+		tempState = tempState & ~EndOfFile;
+	}
+	return tempState;
 }

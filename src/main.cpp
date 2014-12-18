@@ -14,16 +14,11 @@
 #include <stdio.h>
 #include "RetinaManager.h"
 
-#define MODE_INDICATOR "-mode"
-#define FILENAME_INDICATOR "-filename"
-#define EDVS_DATA_FOLDER_NAME "edvsdata/"
-#define FILENAME_EXTENSION_RIGHT "_right.txt"
-#define FILENAME_EXTENSION_LEFT "_left.txt"
 
-#define SHOW_ON_OCULUS true
-#define DEFAULT_MODE 2
+
 //**********************************************************************
 RetinaManager *retinaManager;
+std::mutex myMutex;
 
 /* *****************************************************************
  // This function reads in all the input params of the main function,
@@ -33,6 +28,7 @@ RetinaManager *retinaManager;
  * This function only checks for inputs mode and filename. The
  * correct spelling is defined in the corresponding #defines
  ********************************************************************/
+/*
 int initMainArguments(int argc, char *argv[]) {
 	if (argc < 2) {
 		return true;
@@ -76,7 +72,7 @@ int initMainArguments(int argc, char *argv[]) {
 	retinaManager->setEdvsFileNameRight(edvsDataFileNameRight);
 	return initModeViaKeyboard;
 }
-
+*/
 static void WindowSizeCallback(GLFWwindow* p_Window, int p_Width, int p_Height) {
 	if (glfwGetKey(retinaManager->getWindow(),
 	GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE) {
@@ -111,45 +107,59 @@ int main(int argc, char *argv[]) {
 
 	// ************* UNTIL HERE ***********************
 
-	int initModeViaKeyboard;
+	int initModeViaKeyboard = true;
 	// TODO: reading params from main has not been tested yet (initMainArguments)
-	initModeViaKeyboard = initMainArguments(argc, argv);
+	//initModeViaKeyboard = initMainArguments(argc, argv);
 
 	retinaManager = new RetinaManager();
 	retinaManager->Initialize(initModeViaKeyboard);
 	//cannot take RetinaManager-Method for this, so do it here.
 	glfwSetWindowSizeCallback(retinaManager->getWindow(), WindowSizeCallback);
 
-	bool render = false;
-	RetinaRenderReturnType renderState;
+	//bool render = false;
+	FileAndWindowStateType fileAndWindowState = Default;
+	FileAndWindowStateType fileState;
 	while (1) {
+		//myMutex.lock();
 		retinaManager->KeyControl();
-		switch(retinaManager->getState()){ //THIS IS NOT renderState, but State for play pause etc.
+		// ************* File and Window ***************
+		fileAndWindowState = retinaManager->getFileAndWindowState();
+		if (fileAndWindowState == CloseWindowRequest) {
+			break;
+		}
+
+		// ************* /File and Window ***************
+		switch(retinaManager->getControl()){ //THIS IS NOT fileAndWindowState, but State for play pause etc.
 			case Play:
-				render = true;
+				//render = true;
+				fileState = retinaManager->getFileState();
+				if (fileState == EndOfFile || fileState == RecordTimeElapsed) {
+					retinaManager->setControl(STOP);
+				}
+				retinaManager->UpdateEvents(0);
+				retinaManager->UpdateEvents(1);
+				retinaManager->render();
 				break;
 			case Pause:
-				render = false;
+				//render = false;
 				break;
 			case Stop:
-				render = false;
+				retinaManager->render();
+				//render = false;
 				// FIXME: next 2 lines are just for testing --> now rerunning the same file works. Just delete the next 2 lines later
-				render = retinaManager->setFile("edvs");
-				retinaManager->setState(Play);
+				//render = retinaManager->setFile("edvs");
+				//retinaManager->setControl(PLAY);
 				break;
 		}
 
+/*
 		if(render){
 			// ******************* ONE RENDER LOOP ***************************
-			renderState = retinaManager->render();
-			if (renderState == CloseWindowRequest) {
-				break;
-			}
-			if (renderState == EndOfFile || renderState == RecordTimeElapsed) {
-				retinaManager->setState(Stop);
-			}
+			retinaManager->render();
 			// ****************** /ONE RENDER LOOP ***************************
 		}
+*/
+		//myMutex.unlock();
 	}
 
 

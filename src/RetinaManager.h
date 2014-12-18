@@ -16,12 +16,7 @@
 #include "shader.hpp"
 #include "main.h"
 
-#define RECORD_DURATION 10 //sec
-#define DEFAULT_MODE 2
-#define OCULUS_DK_VERSION_DEBUG 2
 
-#define DEFAULT_EDVSDATA_LEFT_FILENAME "edvsdata/edvs_left.txt"
-#define DEFAULT_EDVSDATA_RIGHT_FILENAME "edvsdata/edvs_right.txt"
 
 /************************Modes supported***************************
  0: read from device, no recording
@@ -65,28 +60,31 @@ private:
 	eDVSGL *eDVS[2];
 	FILE * edvsFile[2];
 
+	ParameterManager paramManager;
+	GLFWwindow *pWindow;
+	RetinaControlType control;
 
-	void UpdateEvents(int eyeIndex);
+
 	void WriteEventsToFile(int eyeIndex);
 	void renderOvrEyes();
 	void ReadEventsFromSensor();
 	int isTimeElapsed();
 	glm::mat4 CalcTransMatrix(ovrEyeType Eye);
-	RetinaRenderReturnType getRenderReturnState();
+
 	void loadSettings();
 	void writeSettings();
 	void writeEventsToFile(FILE * file, edvs_event_t* event, int eventNum);
 	double measureFPS();
-	ParameterManager paramManager;
-	GLFWwindow *pWindow;
-	RetinaStateType State;
-public:
+	void CreateEDVSGL();
 
+public:
+	void UpdateEvents(int eyeIndex);
+	FileAndWindowStateType getFileAndWindowState();
 	RetinaManager();
 	virtual ~RetinaManager();
 	void setMode(int mode);
 	void TerminateWindow();
-	RetinaRenderReturnType render();
+	void render();
 	int Initialize(int initModeViaKeyboard);
 
 	void KeyControl();
@@ -168,15 +166,17 @@ public:
 	int setFile(char *filename);
 
 	void setControl(char *control);
-	void CreateEDVSGL();
 
-	RetinaStateType getState() const {
-		return State;
+
+	RetinaControlType getControl() const {
+		return control;
 	}
 
-	void setState(RetinaStateType state) {
-		State = state;
-	}
+	//void setState(RetinaStateType state) {
+	//	State = state;
+	//}
+
+	FileAndWindowStateType getFileState();
 };
 
 #endif /* RETINAMANAGER_H_ */

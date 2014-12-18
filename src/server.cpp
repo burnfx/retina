@@ -7,8 +7,8 @@
 #include <unistd.h>
 #include "main.h"
 #include "RetinaManager.h"
-
 #include "server.h"
+
 #define SERVER_PORT 1600
 #define MAX_MSG 50
 #define MAX_CMD 50
@@ -36,6 +36,7 @@ void *handleGUI(void * paramsd) {
         	// read command and parameter
         	if (sscanf(line, "%s %s", cmd, param) > 0) {
         		// searching for a valid command sent from the client
+        		myMutex.lock();
         		if (strcmp(cmd, "-quit")==0)  {
         			printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
         			break;
@@ -73,7 +74,7 @@ void *handleGUI(void * paramsd) {
         			retinaManager->setRedGreen(param);
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
 				}
-
+        		myMutex.unlock();
 
         	} else {
         		printf("command not found: %s \n",line);
