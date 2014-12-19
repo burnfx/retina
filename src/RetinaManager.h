@@ -27,14 +27,14 @@
 
 class RetinaManager {
 private:
-	int recordCounter;
-	float recordPlayTime; //in sec e.g: 5.5
+	int recordCounter = 0;
+	int recordPlayTime = 10; //in sec e.g: 5.5
 
 	bool useOculus;
 
 	char *edvsFileName_left;
 	char *edvsFileName_right;
-	char *edvsFileName;
+	char edvsFileName[100];
 
 	const size_t num_max_events = 1024;
 
@@ -71,7 +71,7 @@ private:
 
 
 	void WriteEventsToFile(int eyeIndex);
-	void renderOvrEyes();
+
 	void ReadEventsFromSensor();
 	int isTimeElapsed();
 	glm::mat4 CalcTransMatrix(ovrEyeType Eye);
@@ -83,7 +83,8 @@ private:
 	void CreateEDVSGL();
 
 public:
-	void UpdateEvents(int eyeIndex);
+	void renderOvrEyes();
+	void UpdateEvents();
 	FileAndWindowStateType getFileAndWindowState();
 	RetinaManager();
 	virtual ~RetinaManager();
@@ -177,9 +178,6 @@ public:
 		return control;
 	}
 
-	//void setState(RetinaStateType state) {
-	//	State = state;
-	//}
 
 	FileAndWindowStateType getFileState();
 
@@ -190,7 +188,7 @@ public:
 	int tryToUseOculus();
 
 	void setTime(char *time){
-		this->recordPlayTime = atof(time);
+		this->recordPlayTime = atoi(time);
 	}
 	float getTime(){
 		return this->recordPlayTime;

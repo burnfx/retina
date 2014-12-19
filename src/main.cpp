@@ -9,16 +9,18 @@
 #include <OVR_CAPI_GL.h>
 #include "shader.hpp"
 
-#include "server.h"
+//#include "server.h"
 #include <string.h>
 #include <stdio.h>
 #include "RetinaManager.h"
-
+#include "RetinaServerInterface.h"
+#include "server.h"
 
 
 //**********************************************************************
 RetinaManager *retinaManager;
-std::mutex myMutex;
+RetinaServerInterface *retInterface;
+pthread_mutex_t myMutex;
 
 /* *****************************************************************
  // This function reads in all the input params of the main function,
@@ -96,13 +98,14 @@ int main(int argc, char *argv[]) {
 		printf("%s\n", argv[i]);
 	};
 	printf("\n\n");
-
+	pthread_mutex_init(&myMutex,NULL);
 	/* *******************************************
 	 * THIS IS THE STUFF FOR FELIX's SERVER
 	 *********************************************/
 	pthread_t srv;
 	int value = 1;
-	pthread_create(&srv, 0, startServer, &value);
+	int server;
+	pthread_create(&srv, 0, startServer, &server);
 	pthread_detach(srv);
 
 	// ************* UNTIL HERE ***********************
@@ -116,42 +119,48 @@ int main(int argc, char *argv[]) {
 	//cannot take RetinaManager-Method for this, so do it here.
 	glfwSetWindowSizeCallback(retinaManager->getWindow(), WindowSizeCallback);
 
-	//bool render = false;
 	FileAndWindowStateType fileAndWindowState = Default;
 	FileAndWindowStateType fileState;
+	retInterface = new RetinaServerInterface(retinaManager);
 	while (1) {
-		//myMutex.lock();
+		//pthread_mutex_lock(&myMutex);
 		retinaManager->KeyControl();
+		if (retInterface->hasRequests()){
+			retInterface->ExecuteRequests();
+		}
 		// ************* File and Window ***************
 		fileAndWindowState = retinaManager->getFileAndWindowState();
 		if (fileAndWindowState == CloseWindowRequest) {
 			break;
 		}
-
 		// ************* /File and Window ***************
+
 		switch(retinaManager->getControl()){ //THIS IS NOT fileAndWindowState, but State for play pause etc.
 			case Play:
-				//render = true;
+				//pthread_mutex_lock(&myMutex);
 				fileState = retinaManager->getFileState();
 				if (fileState == EndOfFile || fileState == RecordTimeElapsed) {
 					retinaManager->setControl(STOP);
 				}
-				retinaManager->UpdateEvents(0);
-				retinaManager->UpdateEvents(1);
+				retinaManager->UpdateEvents();
+
 				retinaManager->render();
+				//pthread_mutex_unlock(&myMutex);
 				break;
 			case Pause:
 				//render = false;
 				break;
 			case Stop:
-				retinaManager->render();
+				//retinaManager->setControl(PLAY);
+				//retinaManager->render();
+				//retinaManager->renderOvrEyes();
 				//render = false;
 				// FIXME: next 2 lines are just for testing --> now rerunning the same file works. Just delete the next 2 lines later
 				//render = retinaManager->setFile("edvs");
 				//retinaManager->setControl(PLAY);
 				break;
 		}
-
+//		pthread_mutex_unlock(&myMutex);
 /*
 		if(render){
 			// ******************* ONE RENDER LOOP ***************************

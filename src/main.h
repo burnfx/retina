@@ -4,6 +4,7 @@
 
 #include <mutex>
 #include <thread>
+#include <pthread.h>
 //*************************Defines *******************************
 #define MODE_INDICATOR "-mode"
 #define FILENAME_INDICATOR "-filename"
@@ -17,20 +18,23 @@
 #define DEFAULT_MODE 2
 #define OCULUS_DK_VERSION_DEBUG 2
 
-#define DEFAULT_EDVSDATA_LEFT_FILENAME "edvsdata/edvs_left.txt"
-#define DEFAULT_EDVSDATA_RIGHT_FILENAME "edvsdata/edvs_right.txt"
+#define DEFAULT_EDVSDATA_FILENAME "edvs3"
+
 
 #define PLAY "play"
 #define PAUSE "pause"
 #define STOP "stop"
 
 
-
+class RetinaServerInterface;
 class RetinaManager;
 extern RetinaManager *retinaManager;
 
-extern std::mutex myMutex;
+extern pthread_mutex_t myMutex;
+extern RetinaServerInterface *retInterface;
 
+extern char* nextControl;
+extern bool hasNextControl;
 
 enum FileAndWindowStateType {
 	Default				= 0,

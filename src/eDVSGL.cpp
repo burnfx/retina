@@ -79,7 +79,7 @@ void eDVSGL::updateEvent(edvs_event_t * event, int eventNum,
 	for (i = 0; i < eventNum; i++) {
 
 		if (i==0){ start = getTime();}
-		if (i==eventNum-1){printf ("%lu \n", getTime()-start);}
+		//if (i==eventNum-1){printf ("%lu \n", getTime()-start);}
 
 		m_tempEvent.x = event[i].x;
 		m_tempEvent.y = 127 - event[i].y;

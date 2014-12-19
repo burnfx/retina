@@ -8,12 +8,14 @@
 #include "main.h"
 #include "RetinaManager.h"
 #include "server.h"
+#include "RetinaServerInterface.h"
 
 #define SERVER_PORT 1600
 #define MAX_MSG 50
 #define MAX_CMD 50
 
 int server;
+
 
 
 /* handles incoming communication of GUI */
@@ -36,7 +38,7 @@ void *handleGUI(void * paramsd) {
         	// read command and parameter
         	if (sscanf(line, "%s %s", cmd, param) > 0) {
         		// searching for a valid command sent from the client
-        		//myMutex.lock();
+        		//pthread_mutex_lock(&myMutex);
         		if (strcmp(cmd, "-quit")==0)  {
         			printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
         			break;
@@ -46,7 +48,14 @@ void *handleGUI(void * paramsd) {
         			printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
         		}
         		else if (strcmp(cmd, "-control") == 0) {
-        			retinaManager->setControl(param);
+        			//FIXME
+        			//retinaManager->setControl(param);
+        			retInterface->setRequestControl(param);
+        			//nextControl = param;
+        			//pthread_mutex_lock(&myMutex);
+        			//retinaManager->setControl(param);
+        			//hasNextControl = true;
+        			//pthread_mutex_unlock(&myMutex);
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
 				}
         		else if (strcmp(cmd, "-cDecay") == 0) {
@@ -66,7 +75,8 @@ void *handleGUI(void * paramsd) {
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
 				}
         		else if (strcmp(cmd, "-file") == 0) {
-        			retinaManager->setFile(param);
+        			retInterface->setRequestFile(param);
+        			//retinaManager->setFile(param);
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
 				}
         		else if (strcmp(cmd, "-time") == 0){
@@ -77,7 +87,7 @@ void *handleGUI(void * paramsd) {
         			retinaManager->setRedGreen(param);
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
 				}
-        		//myMutex.unlock();
+        		//pthread_mutex_unlock(&myMutex);
 
         	} else {
         		printf("command not found: %s \n",line);

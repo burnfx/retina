@@ -24,7 +24,6 @@ RetinaManager::~RetinaManager() {
 }
 
 int RetinaManager::isTimeElapsed() {
-	RetinaManager::recordCounter++;
 	if (RetinaManager::recordCounter > RetinaManager::recordPlayTime * 60) {
 		return true;
 	}
@@ -36,7 +35,7 @@ int RetinaManager::isTimeElapsed() {
  * 60FPS = 16.666667ms ## 75 FPS = 13.333333ms, etc.
  ******************************************************************************/
 double RetinaManager::measureFPS() {
-
+	this->recordCounter = this->recordCounter + 1;
 	double currentTime = glfwGetTime();
 	nbFrames++;
 	double d = 1.0;
@@ -128,47 +127,48 @@ void RetinaManager::writeEventsToFile(FILE * file, edvs_event_t* event, int even
 				(unsigned long) tempEvent.w);
 	}
 }
-
-void RetinaManager::UpdateEvents(int eyeIndex) {
+//BIS HIER
+void RetinaManager::UpdateEvents() {
 	// Read events in different modes
-
 	if (RetinaManager::paramManager.getMode() == 0 || RetinaManager::paramManager.getMode() == 1
 			|| RetinaManager::paramManager.getMode() == 4) {
 		RetinaManager::ReadEventsFromSensor();
 	}
-	if (RetinaManager::paramManager.getMode() == 1 || RetinaManager::paramManager.getMode() == 4) {
-		RetinaManager::writeEventsToFile(RetinaManager::edvsFile[0], RetinaManager::events[0],
-				RetinaManager::eventNum[eyeIndex]);
-	}
 
-	switch (RetinaManager::paramManager.getMode()) {
-		case 0: {
-			RetinaManager::eDVS[eyeIndex]->updateEvent(RetinaManager::events[eyeIndex],
-					RetinaManager::eventNum[eyeIndex], RetinaManager::paramManager.getUpdateInterval());
-			break;
+	for (int eyeIndex = 0; eyeIndex < ovrEye_Count; eyeIndex++) {
+		if (RetinaManager::paramManager.getMode() == 1 || RetinaManager::paramManager.getMode() == 4) {
+			RetinaManager::writeEventsToFile(RetinaManager::edvsFile[eyeIndex], RetinaManager::events[eyeIndex],
+					RetinaManager::eventNum[eyeIndex]);
 		}
-
-		case 1: {
-			RetinaManager::eDVS[eyeIndex]->updateEvent(RetinaManager::events[eyeIndex],
-					RetinaManager::eventNum[eyeIndex], RetinaManager::paramManager.getUpdateInterval());
-			break;
-		}
-		case 2: {
-			if (!RetinaManager::eDVS[eyeIndex]->eof()) {
-				RetinaManager::eDVS[eyeIndex]->updateEvent(RetinaManager::edvsFile[eyeIndex],
-						RetinaManager::paramManager.getUpdateInterval(),
-						RetinaManager::paramManager.getDisplayInterval());
-			} else {
-				fclose(RetinaManager::edvsFile[eyeIndex]);
-				RetinaManager::edvsFile[eyeIndex] = NULL; // sadly, fclose does not do this automatically.
+		switch (RetinaManager::paramManager.getMode()) {
+			case 0: {
+				RetinaManager::eDVS[eyeIndex]->updateEvent(RetinaManager::events[eyeIndex],
+						RetinaManager::eventNum[eyeIndex], RetinaManager::paramManager.getUpdateInterval());
+				break;
 			}
-			break;
 
-		}
-		case 4: {
-			RetinaManager::eDVS[eyeIndex]->updateEvent(RetinaManager::events[eyeIndex],
-					RetinaManager::eventNum[eyeIndex], RetinaManager::paramManager.getUpdateInterval());
-			break;
+			case 1: {
+				RetinaManager::eDVS[eyeIndex]->updateEvent(RetinaManager::events[eyeIndex],
+						RetinaManager::eventNum[eyeIndex], RetinaManager::paramManager.getUpdateInterval());
+				break;
+			}
+			case 2: {
+				if (!RetinaManager::eDVS[eyeIndex]->eof()) {
+					RetinaManager::eDVS[eyeIndex]->updateEvent(RetinaManager::edvsFile[eyeIndex],
+							RetinaManager::paramManager.getUpdateInterval(),
+							RetinaManager::paramManager.getDisplayInterval());
+				} else {
+					fclose(RetinaManager::edvsFile[eyeIndex]);
+					RetinaManager::edvsFile[eyeIndex] = NULL; // sadly, fclose does not do this automatically.
+				}
+				break;
+
+			}
+			case 4: {
+				RetinaManager::eDVS[eyeIndex]->updateEvent(RetinaManager::events[eyeIndex],
+						RetinaManager::eventNum[eyeIndex], RetinaManager::paramManager.getUpdateInterval());
+				break;
+			}
 		}
 	}
 }
@@ -275,8 +275,8 @@ FileAndWindowStateType RetinaManager::getFileAndWindowState() {
 
 int RetinaManager::Initialize(int initModeViaKeyboard) {
 	// Init File Names
-	RetinaManager::edvsFileName_left = DEFAULT_EDVSDATA_LEFT_FILENAME;
-	RetinaManager::edvsFileName_right = DEFAULT_EDVSDATA_RIGHT_FILENAME;
+//	RetinaManager::edvsFileName_left = DEFAULT_EDVSDATA_LEFT_FILENAME;
+//	RetinaManager::edvsFileName_right = DEFAULT_EDVSDATA_RIGHT_FILENAME;
 
 	//TODO: ned hier
 	this->useOculus = false;
@@ -483,7 +483,8 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 	// ******************* /OVR eye configurations ************************
 
 	// *********************** Initialize eDVS *************************************
-	this->CreateEDVSGL();
+	//this->CreateEDVSGL();
+	RetinaManager::setFile(DEFAULT_EDVSDATA_FILENAME);
 	// *********************** /Initialize eDVS *************************************
 
 	RetinaManager::control = Stop;
@@ -491,7 +492,8 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 }
 
 void RetinaManager::setMode(int mode) {
-	//RetinaManager::setControl(STOP);
+	//int mode = atoi(cmode);
+	RetinaManager::setControl(STOP);
 	//RetinaManager::setFile(RetinaManager::edvsFileName);
 	//myMutex.lock(); // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
 	switch (mode) {
@@ -514,13 +516,13 @@ void RetinaManager::setMode(int mode) {
 
 			RetinaManager::events[0] = (edvs_event_t*) malloc(RetinaManager::num_max_events * sizeof(edvs_event_t));
 			RetinaManager::events[1] = (edvs_event_t*) malloc(RetinaManager::num_max_events * sizeof(edvs_event_t));
-			RetinaManager::edvsFile[0] = fopen(RetinaManager::getEdvsFileNameLeft(), "w");
-			RetinaManager::edvsFile[1] = fopen(RetinaManager::getEdvsFileNameRight(), "w");
+//			RetinaManager::edvsFile[0] = fopen(RetinaManager::getEdvsFileNameLeft(), "w");
+//			RetinaManager::edvsFile[1] = fopen(RetinaManager::getEdvsFileNameRight(), "w");
 			break;
 		}
 		case 2: {
-			RetinaManager::edvsFile[0] = fopen(RetinaManager::getEdvsFileNameLeft(), "r");
-			RetinaManager::edvsFile[1] = fopen(RetinaManager::getEdvsFileNameRight(), "r");
+//			RetinaManager::edvsFile[0] = fopen(RetinaManager::getEdvsFileNameLeft(), "r");
+//			RetinaManager::edvsFile[1] = fopen(RetinaManager::getEdvsFileNameRight(), "r");
 			break;
 		}
 		case 3: {
@@ -533,8 +535,8 @@ void RetinaManager::setMode(int mode) {
 
 			RetinaManager::events[0] = (edvs_event_t*) malloc(RetinaManager::num_max_events * sizeof(edvs_event_t));
 			RetinaManager::events[1] = (edvs_event_t*) malloc(RetinaManager::num_max_events * sizeof(edvs_event_t));
-			RetinaManager::edvsFile[0] = fopen(RetinaManager::getEdvsFileNameLeft(), "w");
-			RetinaManager::edvsFile[1] = fopen(RetinaManager::getEdvsFileNameRight(), "w");
+//			RetinaManager::edvsFile[0] = fopen(RetinaManager::getEdvsFileNameLeft(), "w");
+//			RetinaManager::edvsFile[1] = fopen(RetinaManager::getEdvsFileNameRight(), "w");
 			break;
 		}
 	}
@@ -634,7 +636,7 @@ void RetinaManager::setRedGreen(char *colorVal) {
 		onColor = glm::vec3(1.0f, 0.0f, 0.0f);
 		offColor = glm::vec3(0.0f, 1.0f, 0.0f);
 	} else {
-// TODO: 1. CHANGE 2nd color, 2nd. MAKE DEFINES? (2. not necissary)...
+// TODO: MAKE DEFINES?
 		midColor = glm::vec3(0.5f, 0.5f, 0.5f);
 		onColor = glm::vec3(1.0f, 1.0f, 1.0f);
 		offColor = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -651,6 +653,7 @@ int RetinaManager::setFile(char *filename) {
 	char *edvsFileName_left;
 	char *edvsFileName_right;
 
+	strcpy(RetinaManager::edvsFileName,filename);
 	// Cast from char * to string, then concatenating, then cast back to char* (yes, strcat would have also worked)
 	edvsFileNameS_left = (std::string) EDVS_DATA_FOLDER_NAME + (std::string) filename
 			+ (std::string) FILENAME_EXTENSION_LEFT;
@@ -709,12 +712,15 @@ void RetinaManager::setControl(char *control) {
 	// myMutex.lock(); // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
 	if (strcmp(control, PLAY) == 0) {
 
-		if (this->control == Stop) this->setFile("edvs"); // Reinitializes eDVSGL objects (for next Play)
+		if (this->control == Stop) {
+			this->setFile(RetinaManager::edvsFileName); // Reinitializes eDVSGL objects (for next Play)
+		}
 		this->control = Play;
 	} else if (strcmp(control, PAUSE) == 0) {
 		this->control = Pause;
 	} else if (strcmp(control, STOP) == 0) {
 		this->control = Stop;
+		this->recordCounter = 0;
 	}
 	// myMutex.unlock(); // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
 }
@@ -741,16 +747,6 @@ void RetinaManager::CreateEDVSGL() {
 	// *********************** /Initialize eDVS *************************************
 }
 
-// TODO: Typ ändern
-FileAndWindowStateType RetinaManager::getFileState() {
-	FileAndWindowStateType tempState = Default;
-	if (RetinaManager::eDVS[0]->eof() || RetinaManager::eDVS[1]->eof()) {
-		tempState = tempState | EndOfFile;
-	} else {
-		tempState = tempState & ~EndOfFile;
-	}
-	return tempState;
-}
 
 int RetinaManager::tryToUseOculus() {
 	int count;
@@ -787,4 +783,20 @@ int RetinaManager::tryToUseOculus() {
 	glfwSetInputMode(pWindow, GLFW_STICKY_KEYS, GL_TRUE);
 
 	return this->useOculus;
+}
+
+FileAndWindowStateType RetinaManager::getFileState() {
+	FileAndWindowStateType tempState = Default;
+	if (RetinaManager::eDVS[0]->eof() || RetinaManager::eDVS[1]->eof()) {
+		tempState = tempState | EndOfFile;
+	} else {
+		tempState = tempState & ~EndOfFile;
+	}
+	if(RetinaManager::paramManager.getMode() == 4 && RetinaManager::isTimeElapsed()){
+		tempState = tempState | RecordTimeElapsed;
+	} else{
+		tempState = tempState & ~RecordTimeElapsed;
+	}
+
+	return tempState;
 }

@@ -59,7 +59,7 @@ src/server.d: ../src/server.cpp ../src/main.h ../src/RetinaManager.h \
  /home/richi-ubuntu/workspace/retina/LibOVR/Src/OVR_CAPI.h \
  ../src/ParameterManager.h \
  /home/richi-ubuntu/workspace/retina/src/shader/shader.hpp \
- ../src/server.h
+ ../src/server.h ../src/RetinaServerInterface.h
 
 ../src/main.h:
 
@@ -188,3 +188,5 @@ src/server.d: ../src/server.cpp ../src/main.h ../src/RetinaManager.h \
 /home/richi-ubuntu/workspace/retina/src/shader/shader.hpp:
 
 ../src/server.h:
+
+../src/RetinaServerInterface.h:
