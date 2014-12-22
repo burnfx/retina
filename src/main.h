@@ -18,12 +18,14 @@
 #define DEFAULT_MODE 2
 #define OCULUS_DK_VERSION_DEBUG 2
 
-#define DEFAULT_EDVSDATA_FILENAME "edvs3"
+//#define DEFAULT_EDVSDATA_FILENAME "wobinich"
+
 
 
 #define PLAY "play"
 #define PAUSE "pause"
 #define STOP "stop"
+
 
 
 class RetinaServerInterface;

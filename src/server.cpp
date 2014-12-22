@@ -51,11 +51,6 @@ void *handleGUI(void * paramsd) {
         			//FIXME
         			//retinaManager->setControl(param);
         			retInterface->setRequestControl(param);
-        			//nextControl = param;
-        			//pthread_mutex_lock(&myMutex);
-        			//retinaManager->setControl(param);
-        			//hasNextControl = true;
-        			//pthread_mutex_unlock(&myMutex);
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
 				}
         		else if (strcmp(cmd, "-cDecay") == 0) {

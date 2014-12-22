@@ -9,11 +9,43 @@
 #include <sstream>
 #include <string.h>
 #include <stdio.h>
+#include <map>
 #include "main.h"
 
 #define getSignForEye(x) ((x)==0 ? (1) : (-1))
 
-// std::mutex myMutex; // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
+// For printing messages during debugging
+#define DEBUG //Uncomment this in order to stop debug messages
+#ifdef DEBUG
+#define DEBUG_MSG(str) do { std::cout << str << std::endl; } while( false )
+#else
+#define DEBUG_MSG(str) do { } while ( false )
+#endif
+
+// ********************************************************************************************************
+// Sadly, AFAIK GLFW_BUTTON_UP or anything similar does not exist... Only GLFW_PRESS exists,
+// which is always true as long as the button is pressed, and not only once. Therefore create it manually...
+std::map<int, int> KeyMap;
+int getOldKeyState(int key) {
+	std::map<int, int>::iterator iterator;
+	iterator = KeyMap.find(key);
+	if (iterator != KeyMap.end()) {
+		return iterator->second;
+	} else {
+		return -1;
+	}
+}
+void setKeyState(int key, int val) {
+	std::map<int, int>::iterator iterator;
+	iterator = KeyMap.find(key);
+	if (iterator != KeyMap.end()) {
+		iterator->second = val;
+	} else {
+		KeyMap.insert(std::pair<int, int>(key, val));
+	}
+}
+// ********************************************************************************************************
+
 
 RetinaManager::RetinaManager() {
 
@@ -280,6 +312,7 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 
 	//TODO: ned hier
 	this->useOculus = false;
+	isInitialized = false;
 
 	if (initModeViaKeyboard) {
 		int nTries = 0;
@@ -484,15 +517,16 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 
 	// *********************** Initialize eDVS *************************************
 	//this->CreateEDVSGL();
-	RetinaManager::setFile(DEFAULT_EDVSDATA_FILENAME);
+	RetinaManager::setFile("edvs");
 	// *********************** /Initialize eDVS *************************************
 
 	RetinaManager::control = Stop;
+	isInitialized = true;
 	return 1;
 }
 
 void RetinaManager::setMode(int mode) {
-	//int mode = atoi(cmode);
+	DEBUG_MSG("Changing mode from " << RetinaManager::paramManager.getMode() << "to" << mode);
 	RetinaManager::setControl(STOP);
 	//RetinaManager::setFile(RetinaManager::edvsFileName);
 	//myMutex.lock(); // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
@@ -516,13 +550,9 @@ void RetinaManager::setMode(int mode) {
 
 			RetinaManager::events[0] = (edvs_event_t*) malloc(RetinaManager::num_max_events * sizeof(edvs_event_t));
 			RetinaManager::events[1] = (edvs_event_t*) malloc(RetinaManager::num_max_events * sizeof(edvs_event_t));
-//			RetinaManager::edvsFile[0] = fopen(RetinaManager::getEdvsFileNameLeft(), "w");
-//			RetinaManager::edvsFile[1] = fopen(RetinaManager::getEdvsFileNameRight(), "w");
 			break;
 		}
 		case 2: {
-//			RetinaManager::edvsFile[0] = fopen(RetinaManager::getEdvsFileNameLeft(), "r");
-//			RetinaManager::edvsFile[1] = fopen(RetinaManager::getEdvsFileNameRight(), "r");
 			break;
 		}
 		case 3: {
@@ -535,17 +565,18 @@ void RetinaManager::setMode(int mode) {
 
 			RetinaManager::events[0] = (edvs_event_t*) malloc(RetinaManager::num_max_events * sizeof(edvs_event_t));
 			RetinaManager::events[1] = (edvs_event_t*) malloc(RetinaManager::num_max_events * sizeof(edvs_event_t));
-//			RetinaManager::edvsFile[0] = fopen(RetinaManager::getEdvsFileNameLeft(), "w");
-//			RetinaManager::edvsFile[1] = fopen(RetinaManager::getEdvsFileNameRight(), "w");
 			break;
 		}
 	}
 	RetinaManager::paramManager.setMode(mode);
 
+	//FIXME: Soll nicht automatisch Play. Init prob..
+	//if(isInitialized){
+	//RetinaManager::setControl(PLAY);
+	//}
 
 	// this->CreateEDVSGL(); //TODO: Darf hier nicht stehen, gibt bei der Init Probleme, weil es zu früh aufgerufen wird, bevor
 	// verexbuffer etc gesetzt ist. Frage ist ob es für später hier NÖTIG ist. --> TESTEN!
-	//myMutex.unlock(); // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
 }
 
 void RetinaManager::TerminateWindow() {
@@ -599,13 +630,19 @@ void RetinaManager::KeyControl() {
 		RetinaManager::paramManager.decUpdateInterval();
 	}
 
-	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_PAUSE) == GLFW_PRESS) {
+	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_PAUSE) == GLFW_PRESS
+	&& getOldKeyState(GLFW_KEY_PAUSE) == GLFW_RELEASE){
 		RetinaManager::setControl(PAUSE);
 	}
-	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_P) == GLFW_PRESS) {
+
+
+	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_P) == GLFW_PRESS
+	&& getOldKeyState(GLFW_KEY_P) == GLFW_RELEASE){
 		RetinaManager::setControl(PLAY);
 	}
-	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_X) == GLFW_PRESS) {
+
+	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_X) == GLFW_PRESS
+	&& getOldKeyState(GLFW_KEY_X) == GLFW_RELEASE){
 		RetinaManager::setControl(STOP);
 	}
 
@@ -625,13 +662,45 @@ void RetinaManager::KeyControl() {
 	if ((glfwGetKey(RetinaManager::pWindow, GLFW_KEY_O) == GLFW_PRESS)) {
 		RetinaManager::tryToUseOculus();
 	}
+
+	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_0) == GLFW_PRESS
+	&& getOldKeyState(GLFW_KEY_0) == GLFW_RELEASE){
+		RetinaManager::setMode(0);
+	}
+	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_1) == GLFW_PRESS
+	&& getOldKeyState(GLFW_KEY_1) == GLFW_RELEASE){
+		RetinaManager::setMode(1);
+	}
+	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_2) == GLFW_PRESS
+	&& getOldKeyState(GLFW_KEY_2) == GLFW_RELEASE){
+		RetinaManager::setMode(2);
+	}
+	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_3) == GLFW_PRESS
+	&& getOldKeyState(GLFW_KEY_3) == GLFW_RELEASE){
+		RetinaManager::setMode(3);
+	}
+	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_4) == GLFW_PRESS
+	&& getOldKeyState(GLFW_KEY_4) == GLFW_RELEASE){
+		RetinaManager::setMode(4);
+	}
+
+
+	setKeyState(GLFW_KEY_0,glfwGetKey(RetinaManager::pWindow, GLFW_KEY_0));
+	setKeyState(GLFW_KEY_1,glfwGetKey(RetinaManager::pWindow, GLFW_KEY_1));
+	setKeyState(GLFW_KEY_2,glfwGetKey(RetinaManager::pWindow, GLFW_KEY_2));
+	setKeyState(GLFW_KEY_3,glfwGetKey(RetinaManager::pWindow, GLFW_KEY_3));
+	setKeyState(GLFW_KEY_4,glfwGetKey(RetinaManager::pWindow, GLFW_KEY_4));
+
+	setKeyState(GLFW_KEY_P,glfwGetKey(RetinaManager::pWindow, GLFW_KEY_P));
+	setKeyState(GLFW_KEY_PAUSE,glfwGetKey(RetinaManager::pWindow, GLFW_KEY_PAUSE));
+	setKeyState(GLFW_KEY_X,glfwGetKey(RetinaManager::pWindow, GLFW_KEY_X));
 }
 
 void RetinaManager::setRedGreen(char *colorVal) {
 	glm::vec3 midColor;
 	glm::vec3 onColor;
 	glm::vec3 offColor;
-	if (atoi(colorVal)) {
+	if (strcmp(colorVal, "on") == 0) {
 		midColor = glm::vec3(0.5f, 0.5f, 0.5f);
 		onColor = glm::vec3(1.0f, 0.0f, 0.0f);
 		offColor = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -653,7 +722,7 @@ int RetinaManager::setFile(char *filename) {
 	char *edvsFileName_left;
 	char *edvsFileName_right;
 
-	strcpy(RetinaManager::edvsFileName,filename);
+	strcpy(RetinaManager::edvsFileName, filename);
 	// Cast from char * to string, then concatenating, then cast back to char* (yes, strcat would have also worked)
 	edvsFileNameS_left = (std::string) EDVS_DATA_FOLDER_NAME + (std::string) filename
 			+ (std::string) FILENAME_EXTENSION_LEFT;
@@ -747,7 +816,6 @@ void RetinaManager::CreateEDVSGL() {
 	// *********************** /Initialize eDVS *************************************
 }
 
-
 int RetinaManager::tryToUseOculus() {
 	int count;
 	GLFWmonitor** monitors = glfwGetMonitors(&count);
@@ -792,9 +860,9 @@ FileAndWindowStateType RetinaManager::getFileState() {
 	} else {
 		tempState = tempState & ~EndOfFile;
 	}
-	if(RetinaManager::paramManager.getMode() == 4 && RetinaManager::isTimeElapsed()){
+	if (RetinaManager::paramManager.getMode() == 4 && RetinaManager::isTimeElapsed()) {
 		tempState = tempState | RecordTimeElapsed;
-	} else{
+	} else {
 		tempState = tempState & ~RecordTimeElapsed;
 	}
 

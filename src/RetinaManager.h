@@ -31,6 +31,7 @@ private:
 	int recordPlayTime = 10; //in sec e.g: 5.5
 
 	bool useOculus;
+	bool isInitialized = false;
 
 	char *edvsFileName_left;
 	char *edvsFileName_right;

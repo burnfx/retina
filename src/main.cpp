@@ -122,6 +122,7 @@ int main(int argc, char *argv[]) {
 	FileAndWindowStateType fileAndWindowState = Default;
 	FileAndWindowStateType fileState;
 	retInterface = new RetinaServerInterface(retinaManager);
+	bool goBreak = false;
 	while (1) {
 		//pthread_mutex_lock(&myMutex);
 		retinaManager->KeyControl();
@@ -141,6 +142,7 @@ int main(int argc, char *argv[]) {
 				fileState = retinaManager->getFileState();
 				if (fileState == EndOfFile || fileState == RecordTimeElapsed) {
 					retinaManager->setControl(STOP);
+					goBreak = true;
 				}
 				retinaManager->UpdateEvents();
 
@@ -160,6 +162,7 @@ int main(int argc, char *argv[]) {
 				//retinaManager->setControl(PLAY);
 				break;
 		}
+		//if(goBreak) break;
 //		pthread_mutex_unlock(&myMutex);
 /*
 		if(render){
