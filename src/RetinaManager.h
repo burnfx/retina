@@ -55,6 +55,8 @@ private:
 	ovrEyeRenderDesc eyeRenderDesc[2];
 	ssize_t eventNum[2];
 
+	GLuint texId;
+	GLuint depthBufferId;
 
 	GLuint VertexArrayID;
 	GLuint vertexbuffer;
@@ -89,10 +91,11 @@ public:
 	FileAndWindowStateType getFileAndWindowState();
 	RetinaManager();
 	virtual ~RetinaManager();
-	void setMode(int mode);
+	int setMode(int mode);
 	void TerminateWindow();
 	void render();
 	int Initialize(int initModeViaKeyboard);
+	int initGL(ovrSizei clientSize,ovrSizei texSize, GLFWmonitor *monitor);
 
 	void KeyControl();
 

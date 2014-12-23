@@ -13,6 +13,7 @@
 #define FILENAME_EXTENSION_LEFT "_left.txt"
 
 #define DEFAULT_MODE 2
+#define ERROR_MODE -1
 
 //#define RECORD_DURATION 10 //sec
 #define DEFAULT_MODE 2
