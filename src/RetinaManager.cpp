@@ -660,7 +660,7 @@ void RetinaManager::KeyControl() {
 		RetinaManager::setMode(4);
 	}
 	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_T) == GLFW_PRESS && getOldKeyState(GLFW_KEY_T) == GLFW_RELEASE) {
-		RetinaManager::setFile("edvs");
+		RetinaManager::setFile("edvs2");
 	}
 
 	setKeyState(GLFW_KEY_0, glfwGetKey(RetinaManager::pWindow, GLFW_KEY_0));
@@ -750,15 +750,14 @@ int RetinaManager::setFile(char *filename) {
 			break;
 		}
 		default: {
-			DEBUG_MSG("Tried to use function SetFile, when being in an invalid mode: "
-					<< RetinaManager::paramManager.getMode());
+			DEBUG_MSG(
+					"Tried to use function SetFile, when being in an invalid mode: " << RetinaManager::paramManager.getMode());
 			return 0;
 		}
 	}
 
 	this->CreateEDVSGL();
 	if (RetinaManager::edvsFile[0] != NULL && RetinaManager::edvsFile[1] != NULL) {
-		if(RetinaManager::edvsFile[0] != EOF && RetinaManager::edvsFile[1] != EOF)
 		return 1;
 	} else {
 		return 0;

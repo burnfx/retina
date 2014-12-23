@@ -9,36 +9,40 @@
 #define RETINASERVERINTERFACE_H_
 #include "main.h"
 
-typedef struct RequestType{
+typedef struct{
 	char cstr[40];
 	bool isPending;
-};
+} RequestType;
 
 class RetinaManager;
 
 class RetinaServerInterface {
 private:
 	bool pendingRequest;
-	bool pendingRequestFilename;
-	bool pendingRequestRedGreen;
-	bool pendingRequestControl;
-	bool pendingRequestUpdateInterval;
-	bool pendingRequestDisplayInterval;
-	bool pendingRequestCDecay;
-	bool pendingRequestViewport_Offset;
-	bool pendingRequestTranslateBack_Offset;
 
-	char filename[40];
-	char control[40];
 	RetinaManager *retinaManager;
 	RequestType mode;
+	RequestType control;
+	RequestType filename;
+	RequestType redGreen;
+	RequestType updateInterval;
+	RequestType displayInterval;
+	RequestType cDecay;
+	RequestType viewport_Offset;
+	RequestType translateBack_Offset;
 public:
-	bool hasRequests(){ return pendingRequest;}
-	void setRequestFile(char *filename);
-	//void setRequestRedGreen(int RedGreen){this->redGreen = RedGreen; pendingRequest = true; pendingRequestRedGreen = true;};
 
+	int setRequestFile(char *filename);
+	int setRequestRedGreen(char *RedGreen);
 	int setRequestControl(char *control);
 	int setRequestMode(char *mode);
+	int setRequestUpdateInterval(char *updateInterval);
+	int setRequestDisplayInterval(char *updateInterval);
+	int setRequestcDecay(char *updateInterval);
+	int setRequestViewport_Offset(char *viewport_Offset);
+	int setRequestTranslateBack_Offset(char *viewport_Offset);
+
+	bool hasRequests(){return pendingRequest;}
 	int ExecuteRequests();
 
 	RetinaServerInterface(RetinaManager *retinaManager);

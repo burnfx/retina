@@ -165,6 +165,9 @@ public:
 	void setUpdateInterval(char *updateInterval){
 		this->getParamManager().setUpdateInterval(atoi(updateInterval));
 	}
+	void setDisplayInterval(char *displayInterval){
+		this->getParamManager().setDisplayInterval(atoi(displayInterval));
+	}
 	void setTranslateBack_Offset(char *translate_back){
 		this->getParamManager().setTranslateBackOffset(atof(translate_back));
 	}

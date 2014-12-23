@@ -16,7 +16,7 @@
 ParameterManager::ParameterManager() {
 	updateInterval = 1000;
 	displayInterval = 10000;
-	translateBack_Offset = -1.3;
+	translateBack_Offset = -1.5;
 	viewport_Offset = 20.0;
 	cDecay = 0.1;
 
