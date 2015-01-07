@@ -89,6 +89,13 @@ int RetinaServerInterface::setRequestTranslateBack_Offset(char *translateBack_Of
 	return this->translateBack_Offset.isPending;
 }
 
+int RetinaServerInterface::setRequestTime(char *time){
+	strcpy(this->time.cstr,time);
+	this->time.isPending = true;
+	this->pendingRequest = true;
+	return this->time.isPending;
+}
+
 int RetinaServerInterface::ExecuteRequests(){
 	if(this->filename.isPending == true) {
 		retinaManager->setFile(this->filename.cstr);
@@ -125,6 +132,10 @@ int RetinaServerInterface::ExecuteRequests(){
 	if(this->translateBack_Offset.isPending == true){
 		retinaManager->setTranslateBack_Offset(this->translateBack_Offset.cstr);
 		this->translateBack_Offset.isPending = false;
+	}
+	if(this->time.isPending == true){
+		retinaManager->setTime(this->time.cstr);
+		this->time.isPending = false;
 	}
 
 	pendingRequest = false;

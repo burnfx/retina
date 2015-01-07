@@ -30,6 +30,7 @@ private:
 	RequestType cDecay;
 	RequestType viewport_Offset;
 	RequestType translateBack_Offset;
+	RequestType time;
 public:
 
 	int setRequestFile(char *filename);
@@ -41,6 +42,7 @@ public:
 	int setRequestcDecay(char *updateInterval);
 	int setRequestViewport_Offset(char *viewport_Offset);
 	int setRequestTranslateBack_Offset(char *viewport_Offset);
+	int setRequestTime(char *time);
 
 	bool hasRequests(){return pendingRequest;}
 	int ExecuteRequests();

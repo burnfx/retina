@@ -52,7 +52,7 @@ RetinaManager::RetinaManager() {
 }
 
 RetinaManager::~RetinaManager() {
-	// TODO Auto-generated destructor stub
+
 }
 
 int RetinaManager::isTimeElapsed() {
@@ -660,7 +660,7 @@ void RetinaManager::KeyControl() {
 		RetinaManager::setMode(4);
 	}
 	if (glfwGetKey(RetinaManager::pWindow, GLFW_KEY_T) == GLFW_PRESS && getOldKeyState(GLFW_KEY_T) == GLFW_RELEASE) {
-		RetinaManager::setFile("edvs2");
+		RetinaManager::setFile("edvs");
 	}
 
 	setKeyState(GLFW_KEY_0, glfwGetKey(RetinaManager::pWindow, GLFW_KEY_0));
@@ -760,6 +760,7 @@ int RetinaManager::setFile(char *filename) {
 	if (RetinaManager::edvsFile[0] != NULL && RetinaManager::edvsFile[1] != NULL) {
 		return 1;
 	} else {
+		DEBUG_MSG("edvsFile is a nullpointer");
 		return 0;
 	}
 }
@@ -770,6 +771,15 @@ void RetinaManager::setControl(char *control) {
 			// Reinitialize eDVSGL objects (for next Play)
 			if (this->setFile(RetinaManager::edvsFileName) == 1) {
 				this->control = Play;
+			} else{
+				DEBUG_MSG("Couldn't start play, because setFile returned 0. Maybe wrong filename.");
+			}
+		} else{
+			if (RetinaManager::edvsFile[0] != NULL && RetinaManager::edvsFile[1] != NULL) {
+				this->control = Play;
+			} else {
+				DEBUG_MSG("edvsFile is a nullpointer");
+				this->control = Stop;
 			}
 		}
 	} else if (strcmp(control, PAUSE) == 0) {
@@ -778,7 +788,6 @@ void RetinaManager::setControl(char *control) {
 		this->control = Stop;
 		this->recordCounter = 0;
 	}
-	// myMutex.unlock(); // Hier und in server.cpp geht natürlich nicht (wäre doppelter lock)
 }
 
 void RetinaManager::CreateEDVSGL() {

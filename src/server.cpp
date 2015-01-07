@@ -44,29 +44,32 @@ void *handleGUI(void * paramsd) {
         			break;
         		}
         		else if (strcmp(cmd, "-mode") == 0) {
-        			retinaManager->setMode(param);
+        			retInterface->setRequestMode(param);
+        			//retinaManager->setMode(param);
         			printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
         		}
         		else if (strcmp(cmd, "-control") == 0) {
-        			//FIXME
-        			//retinaManager->setControl(param);
         			retInterface->setRequestControl(param);
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
 				}
         		else if (strcmp(cmd, "-cDecay") == 0) {
-        			retinaManager->setcDecay(param);
+        			//retinaManager->setcDecay(param);
+        			retInterface->setRequestcDecay(param);
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
 				}
         		else if (strcmp(cmd, "-updateInterval") == 0) {
-        			retinaManager->setUpdateInterval(param);
+        			//retinaManager->setUpdateInterval(param);
+        			retInterface->setRequestUpdateInterval(param);
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
 				}
         		else if (strcmp(cmd, "-translateBack_Offset") == 0) {
-        			retinaManager->setTranslateBack_Offset(param);
+        			//retinaManager->setTranslateBack_Offset(param);
+        			retInterface->setRequestTranslateBack_Offset(param);
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
 				}
         		else if (strcmp(cmd, "-viewport_Offset") == 0) {
-        			retinaManager->setViewport_Offset(param);
+        			//retinaManager->setViewport_Offset(param);
+        			retInterface->setRequestViewport_Offset(param);
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
 				}
         		else if (strcmp(cmd, "-file") == 0) {
@@ -75,11 +78,13 @@ void *handleGUI(void * paramsd) {
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
 				}
         		else if (strcmp(cmd, "-time") == 0){
-        			retinaManager->setTime(param);
+        			//retinaManager->setTime(param);
+        			retInterface->setRequestTime(param);
         			printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
         		}
         		else if (strcmp(cmd, "-redgreen") == 0) {
-        			retinaManager->setRedGreen(param);
+        			//retinaManager->setRedGreen(param);
+        			retInterface->setRequestRedGreen(param);
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
 				}
         		//pthread_mutex_unlock(&myMutex);
