@@ -20,7 +20,6 @@
 //**********************************************************************
 RetinaManager *retinaManager;
 RetinaServerInterface *retInterface;
-pthread_mutex_t myMutex;
 
 
 static void WindowSizeCallback(GLFWwindow* p_Window, int p_Width, int p_Height) {

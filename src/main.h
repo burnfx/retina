@@ -2,7 +2,6 @@
 #define MAIN_H_
 
 
-#include <mutex>
 #include <thread>
 #include <pthread.h>
 //*************************Defines *******************************
@@ -19,7 +18,6 @@
 #define DEFAULT_MODE 2
 #define OCULUS_DK_VERSION_DEBUG 2
 
-//#define DEFAULT_EDVSDATA_FILENAME "bla"
 
 
 
@@ -28,16 +26,12 @@
 #define STOP "stop"
 
 
-
 class RetinaServerInterface;
 class RetinaManager;
-extern RetinaManager *retinaManager;
 
-extern pthread_mutex_t myMutex;
+extern RetinaManager *retinaManager;
 extern RetinaServerInterface *retInterface;
 
-extern char* nextControl;
-extern bool hasNextControl;
 
 enum FileAndWindowStateType {
 	Default				= 0,
