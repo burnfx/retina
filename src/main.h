@@ -19,7 +19,7 @@
 #define DEFAULT_MODE 2
 #define OCULUS_DK_VERSION_DEBUG 2
 
-//#define DEFAULT_EDVSDATA_FILENAME "wobinich"
+//#define DEFAULT_EDVSDATA_FILENAME "bla"
 
 
 
