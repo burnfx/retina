@@ -39,9 +39,9 @@ ParameterManager::~ParameterManager() {
 
 
 void ParameterManager::setColors(glm::vec3 midColor, glm::vec3 onColor, glm::vec3 offColor){
-	ParameterManager::midColor = midColor;
-	ParameterManager::onColor = onColor;
-	ParameterManager::offColor = offColor;
+	this->midColor = midColor;
+	this->onColor = onColor;
+	this->offColor = offColor;
 }
 
 
