@@ -13,6 +13,7 @@
 #include "main.h"
 
 #define getSignForEye(x) ((x)==0 ? (1) : (-1))
+#define FPS 60
 
 // For printing messages during debugging
 #define DEBUG //Uncomment this in order to stop debug messages
@@ -23,7 +24,7 @@
 #endif
 
 // ********************************************************************************************************
-// Sadly, AFAIK GLFW_BUTTON_UP or anything similar does not exist... Only GLFW_PRESS exists,
+// AFAIK GLFW_BUTTON_UP or anything similar for detecting the edge does not exist... Only GLFW_PRESS exists,
 // which is always true as long as the button is pressed, and not only once. Therefore create it manually...
 std::map<int, int> KeyMap;
 int getOldKeyState(int key) {
@@ -46,6 +47,8 @@ void setKeyState(int key, int val) {
 }
 // ********************************************************************************************************
 
+// Constructor: Only the isInitialized variable is set, the rest is done in the init function, because the object
+// may be re-initialized
 RetinaManager::RetinaManager() {
 	this->useOculus = false;
 	isInitialized = false;
@@ -55,16 +58,17 @@ RetinaManager::~RetinaManager() {
 
 }
 
+// This function returns true when the time specified in recordPlayTime has elapsed.
+// Note the the variable recordCounter is incremented during each frame in the function measureFPS, which is called from render()
 int RetinaManager::isTimeElapsed() {
-	if (this->recordCounter > this->recordPlayTime * 60) {
+	if (this->recordCounter > this->recordPlayTime * FPS) {
 		return true;
 	}
 	return false;
 }
 
 /* ******************** Measure FPS ********************************************
- * FPS target in ms: 1000ms/FPS
- * 60FPS = 16.666667ms ## 75 FPS = 13.333333ms, etc.
+This function counts the number of frames during each second and displays it in the window
  ******************************************************************************/
 double RetinaManager::measureFPS() {
 	this->recordCounter = this->recordCounter + 1;
@@ -79,8 +83,9 @@ double RetinaManager::measureFPS() {
 		ss << d;
 		const char* str = ss.str().c_str();
 
-		glfwSetWindowTitle(pWindow, str);
-
+		if(pWindow != NULL){
+			glfwSetWindowTitle(pWindow, str);
+		}
 		// counter zero, count until next second is finished
 		nbFrames = 0;
 		initTime += 1.0;
@@ -88,6 +93,7 @@ double RetinaManager::measureFPS() {
 	return d;
 }
 
+// This function loads settings from a textfile like factors for the zoom (translateback offset), eye distance(viewport offset)
 void RetinaManager::loadSettings() {
 	FILE * settings = fopen("settings.txt", "r");
 
@@ -114,6 +120,7 @@ void RetinaManager::loadSettings() {
 
 }
 
+// This function write settings to a textfile like factors for the zoom (translateback offset), eye distance(viewport offset)
 void RetinaManager::writeSettings() {
 
 	FILE * settings = fopen("settings.txt", "w");
@@ -140,6 +147,10 @@ void RetinaManager::writeSettings() {
 	fclose(settings);
 }
 
+// This function writes the recorded events to a file. INPUTS:
+// events: pointer to a structure which stores the events
+// file: pointer to the file
+// eventNum: amount of events
 void RetinaManager::writeEventsToFile(FILE * file, edvs_event_t* event, int eventNum) {
 
 	glm::vec4 tempEvent;
@@ -161,19 +172,22 @@ void RetinaManager::writeEventsToFile(FILE * file, edvs_event_t* event, int even
 }
 
 
+// This function updates the events to be displayed. In each frame this function should be called to retrieve new event data.
+// depending on the mode the source for new data is either the eDVS sensor or a file
 void RetinaManager::UpdateEvents() {
-	// Read events in different modes
 	if (this->paramManager.getMode() == 0 || this->paramManager.getMode() == 1
-			|| this->paramManager.getMode() == 4) {
+			|| this->paramManager.getMode() == 3) {
 		this->ReadEventsFromSensor();
 	}
 
 	for (int eyeIndex = 0; eyeIndex < ovrEye_Count; eyeIndex++) {
-		if (this->paramManager.getMode() == 1 || this->paramManager.getMode() == 4) {
+		if (this->paramManager.getMode() == 1 || this->paramManager.getMode() == 3) {
 			this->writeEventsToFile(this->edvsFile[eyeIndex], this->events[eyeIndex],
 					this->eventNum[eyeIndex]);
 		}
+
 		switch (this->paramManager.getMode()) {
+			// update from edvs sensor
 			case 0: {
 				this->eDVS[eyeIndex]->updateEvent(this->events[eyeIndex],
 						this->eventNum[eyeIndex], this->paramManager.getUpdateInterval());
@@ -181,11 +195,13 @@ void RetinaManager::UpdateEvents() {
 			}
 
 			case 1: {
+			// update from edvs sensor
 				this->eDVS[eyeIndex]->updateEvent(this->events[eyeIndex],
 						this->eventNum[eyeIndex], this->paramManager.getUpdateInterval());
 				break;
 			}
 			case 2: {
+				// update from file
 				if (!this->eDVS[eyeIndex]->eof()) {
 					this->eDVS[eyeIndex]->updateEvent(this->edvsFile[eyeIndex],
 							this->paramManager.getUpdateInterval(),
@@ -197,7 +213,8 @@ void RetinaManager::UpdateEvents() {
 				break;
 
 			}
-			case 4: {
+			// update from edvs sensor
+			case 3: {
 				this->eDVS[eyeIndex]->updateEvent(this->events[eyeIndex],
 						this->eventNum[eyeIndex], this->paramManager.getUpdateInterval());
 				break;
@@ -207,7 +224,7 @@ void RetinaManager::UpdateEvents() {
 }
 
 /* *************************************************************************
- * This function reads Events from edvs-sensors and stores them into
+ * This function reads Events from edvs-sensors and stores them into the structure "events"
  ***************************************************************************/
 void RetinaManager::ReadEventsFromSensor() {
 	// Obtain event stream from eDVS
@@ -217,6 +234,7 @@ void RetinaManager::ReadEventsFromSensor() {
 			this->num_max_events);
 }
 
+// This function calculates the transformation Matrix, needed for the Oculus Rift display
 glm::mat4 RetinaManager::CalcTransMatrix(ovrEyeType Eye) {
 	glm::mat4 projMat;
 	glm::mat4 modelViewMat;
@@ -237,6 +255,7 @@ glm::mat4 RetinaManager::CalcTransMatrix(ovrEyeType Eye) {
 	// Calc and Return the transformed Mat
 	return projMat * modelViewMat * translateBack * translateIPD;;
 }
+
 
 void RetinaManager::renderOvrEyes() {
 	ovrHmd_BeginFrame((this->hmd), 0);
@@ -265,6 +284,8 @@ void RetinaManager::renderOvrEyes() {
 	ovrHmd_EndFrame((this->hmd));
 }
 
+// This performs one rendering step and measures the FPS.
+// This function should be called in every step of the render loop
 void RetinaManager::render() {
 
 	this->measureFPS();
@@ -289,10 +310,13 @@ void RetinaManager::render() {
 	return;
 }
 
+// TODO: change type
+// This function tests and returns whether the recording time has elapsed (if being in mode 3) or
+// if the display window should close because of any reason.
 FileAndWindowStateType RetinaManager::getFileAndWindowState() {
 	FileAndWindowStateType tempState = Default;
 	glfwPollEvents();
-	if (this->paramManager.getMode() == 4 && this->isTimeElapsed()) {
+	if (this->paramManager.getMode() == 3 && this->isTimeElapsed()) {
 		tempState = tempState | RecordTimeElapsed;
 	} else {
 		tempState = tempState & ~RecordTimeElapsed;
@@ -306,6 +330,7 @@ FileAndWindowStateType RetinaManager::getFileAndWindowState() {
 	return tempState;
 }
 
+// This function initializes the part of the code, which belongs to the GL libraries
 int RetinaManager::initGL(ovrSizei clientSize, ovrSizei texSize, GLFWmonitor *monitor) {
 	if (&(this->texId) != NULL) glDeleteTextures(1, &(this->texId));
 
@@ -413,6 +438,8 @@ int RetinaManager::initGL(ovrSizei clientSize, ovrSizei texSize, GLFWmonitor *mo
 	return 0;
 }
 
+// Initialization function. Needs to be called after instantiating the object.
+// The object can be re-initialized at different positions in code
 int RetinaManager::Initialize(int initModeViaKeyboard) {
 	if (initModeViaKeyboard) {
 		int nTries = 0;
@@ -427,7 +454,7 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 		do {
 			scanf("%i", &(tempMode));
 			nTries += 1;
-		} while (!(tempMode >= 0 && tempMode <= 4 && nTries < 5));
+		} while (!(tempMode >= 0 && tempMode <= 3 && nTries < 5));
 		if (nTries >= 5) tempMode = DEFAULT_MODE;
 
 		this->setMode(tempMode);
@@ -492,6 +519,8 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 	return 1;
 }
 
+// This function changes the mode to the one specified as input parameter. When given a wrong mode number or
+// neccessary objects like streamHandle are invalid (set to 0), mode will be set to ERROR_MODE
 int RetinaManager::setMode(int mode) {
 	DEBUG_MSG("Changing mode from mode " << this->paramManager.getMode() << " to " << mode);
 	this->setControl(STOP);
@@ -526,11 +555,6 @@ int RetinaManager::setMode(int mode) {
 			break;
 		}
 		case 3: {
-			DEBUG_MSG("Not implemented yet");
-			mode = ERROR_MODE;
-			break;
-		}
-		case 4: {
 			this->streamHandle[0] = edvs_open("/dev/ttyUSB0?baudrate=4000000");
 			this->streamHandle[1] = edvs_open("/dev/ttyUSB1?baudrate=4000000");
 			if (this->streamHandle[0] != 0 && this->streamHandle[1] != 0) {
@@ -557,6 +581,7 @@ int RetinaManager::setMode(int mode) {
 	}
 }
 
+// This function terminated and closes the display window, after buffers have been freed.
 void RetinaManager::TerminateWindow() {
 	glDeleteBuffers(1, &(this->vertexbuffer));
 	glDeleteVertexArrays(1, &(this->VertexArrayID));
@@ -576,6 +601,11 @@ void RetinaManager::TerminateWindow() {
 	glfwTerminate();
 }
 
+// This function reads in specific keyboard inputs which are used frequently for testing/debugging or other reasons
+// Note that if the program shall only respond to edges (press once or release once), the old keystate
+// must be read and a new keyState must be set. This is done for keys like "0","1" for the modes or "T", which
+// sets an arbitrary test file. Adapt the name of this file if necessary (Note that the actual filenames must
+// follow with "_left.txt" and "_right.txt" in order to work properly. e.g. file "X" will must actually be "X_left.txt" and "X_right.txt"
 void RetinaManager::KeyControl() {
 
 	if (glfwGetKey(this->pWindow, GLFW_KEY_UP) == GLFW_PRESS) {
@@ -650,9 +680,6 @@ void RetinaManager::KeyControl() {
 	if (glfwGetKey(this->pWindow, GLFW_KEY_3) == GLFW_PRESS && getOldKeyState(GLFW_KEY_3) == GLFW_RELEASE) {
 		this->setMode(3);
 	}
-	if (glfwGetKey(this->pWindow, GLFW_KEY_4) == GLFW_PRESS && getOldKeyState(GLFW_KEY_4) == GLFW_RELEASE) {
-		this->setMode(4);
-	}
 	if (glfwGetKey(this->pWindow, GLFW_KEY_T) == GLFW_PRESS && getOldKeyState(GLFW_KEY_T) == GLFW_RELEASE) {
 		this->setFile("1/e0d30l1m1r1h444");
 	}
@@ -663,7 +690,6 @@ void RetinaManager::KeyControl() {
 	setKeyState(GLFW_KEY_1, glfwGetKey(this->pWindow, GLFW_KEY_1));
 	setKeyState(GLFW_KEY_2, glfwGetKey(this->pWindow, GLFW_KEY_2));
 	setKeyState(GLFW_KEY_3, glfwGetKey(this->pWindow, GLFW_KEY_3));
-	setKeyState(GLFW_KEY_4, glfwGetKey(this->pWindow, GLFW_KEY_4));
 
 	setKeyState(GLFW_KEY_P, glfwGetKey(this->pWindow, GLFW_KEY_P));
 	setKeyState(GLFW_KEY_PAUSE, glfwGetKey(this->pWindow, GLFW_KEY_PAUSE));
@@ -677,6 +703,7 @@ void RetinaManager::KeyControl() {
 	setKeyState(GLFW_KEY_T, glfwGetKey(this->pWindow, GLFW_KEY_T));
 }
 
+// This function changes the display colors either to black/grey/white or to red/grey/green
 void RetinaManager::setRedGreen(char *colorVal) {
 	glm::vec3 midColor;
 	glm::vec3 onColor;
@@ -695,6 +722,8 @@ void RetinaManager::setRedGreen(char *colorVal) {
 	this->getParamManager().setOffColor(offColor);
 }
 
+// this function changes the filename. Depending on the mode, the filename specifies the file to be displayed in the window
+// or a filename for the video track to be recorded. Note: this function appends "_left.txt" and "_right.txt" to the actual filenames
 int RetinaManager::setFile(char *filename) {
 
 	std::string edvsFileNameS_left;
@@ -737,10 +766,6 @@ int RetinaManager::setFile(char *filename) {
 			break;
 		}
 		case 3: {
-			printf("Not implemented yet");
-			break;
-		}
-		case 4: {
 			this->edvsFile[0] = fopen(edvsFileName_left, "w");
 			this->edvsFile[1] = fopen(edvsFileName_right, "w");
 			break;
@@ -761,6 +786,9 @@ int RetinaManager::setFile(char *filename) {
 	}
 }
 
+// This function switches the display state between Play/Pause/Stop
+// Note: When control play is received, while being in mode stop, the setFile function is called with the currently store filename.
+// The return value of setFile is evaluated, depending on the return value setting the control to Play is successful or not (debug msg sent)
 void RetinaManager::setControl(char *control) {
 	if (strcmp(control, PLAY) == 0) {
 		if (this->control == Stop) {
@@ -786,6 +814,7 @@ void RetinaManager::setControl(char *control) {
 	}
 }
 
+//This function creates the eDVSGL objects and initializes them
 void RetinaManager::CreateEDVSGL() {
 	if (this->eDVS[0] != NULL) {
 		delete (this->eDVS[0]);
@@ -806,6 +835,9 @@ void RetinaManager::CreateEDVSGL() {
 			this->programID);
 }
 
+// This function switches the display monitor to the oculus rift, if it is connected.
+// Note: This function actually just declares the last connected monitor as the occulus rift,
+// as it is not possible to identify the oculus rift afaik (not even with function glfwGetMonitorName)
 int RetinaManager::tryToUseOculus() {
 	int count;
 	GLFWmonitor** monitors;
@@ -845,6 +877,7 @@ int RetinaManager::tryToUseOculus() {
 	return this->useOculus;
 }
 
+// this function returns whether the files with edvs data are at end of while or whether Record time has elapsed in mode 3
 FileAndWindowStateType RetinaManager::getFileState() {
 	FileAndWindowStateType tempState = Default;
 	if (this->eDVS[0]->eof() || this->eDVS[1]->eof()) {
@@ -852,7 +885,7 @@ FileAndWindowStateType RetinaManager::getFileState() {
 	} else {
 		tempState = tempState & ~EndOfFile;
 	}
-	if (this->paramManager.getMode() == 4 && this->isTimeElapsed()) {
+	if (this->paramManager.getMode() == 3 && this->isTimeElapsed()) {
 		tempState = tempState | RecordTimeElapsed;
 	} else {
 		tempState = tempState & ~RecordTimeElapsed;
