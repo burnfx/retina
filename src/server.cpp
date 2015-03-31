@@ -24,7 +24,9 @@ void *handleGUI(void * paramsd) {
 
     char line[MAX_MSG];
     char cmd[MAX_CMD];
+    char reply[MAX_CMD];
     char param[MAX_CMD];
+    const char* ack = "ack ";
     int read_size;
 
     /* read_size > 0 	== message received
@@ -32,7 +34,8 @@ void *handleGUI(void * paramsd) {
     while (	(read_size = recv(client_local , line , MAX_MSG , 0)) >= 0 ) {
         // check for command
         if (strncmp(line, "-", 1) == 0) {
-        	printf("command + parameter: %s\n", line);
+        	strcpy(reply, ack);
+        	// printf("command + parameter: %s\n", line);
         	memset(cmd, 0, MAX_CMD);
         	memset(param, 0, MAX_CMD);
         	// read command and parameter
@@ -50,6 +53,12 @@ void *handleGUI(void * paramsd) {
         		}
         		else if (strcmp(cmd, "-control") == 0) {
         			retInterface->setRequestControl(param);
+        			while (1) {
+        				if (retInterface->hasReplies()) {
+        					break;
+        				}
+        			}
+        			strcat(reply,retInterface->getReplyTime());
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
 				}
         		else if (strcmp(cmd, "-cDecay") == 0) {
@@ -86,18 +95,22 @@ void *handleGUI(void * paramsd) {
         			//retinaManager->setRedGreen(param);
         			retInterface->setRequestRedGreen(param);
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
+
+				} else {
+					printf("command not found: %s \n",line);
+        		// strcpy(reply, "non existing command: "); strcat(reply, line); strcat(reply, "please use \"-setting value\" e.g. \"-mode 2\""); send(client_local, reply,strlen(reply),0);
 				}
-        		//pthread_mutex_unlock(&myMutex);
 
         	} else {
-        		printf("command not found: %s \n",line);
-        		// strcpy(reply, "non existing command: "); strcat(reply, line); strcat(reply, "please use \"-setting value\" e.g. \"-mode 2\""); send(client_local, reply,strlen(reply),0);
+        		printf("sscanf failed");
         	}
         } else {
         	printf("wrong usage: %s. please use \"-setting value\" e.g. \"-mode 2\"",line);
         	// strcpy(reply, "wrong usage: "); strcat(reply, line); strcat(reply, ""); send(client_local, reply,strlen(reply),0);
         }
+        // sendQt(ack, client_local);
     	memset(line,0,MAX_MSG);
+    	memset(reply,0,MAX_MSG);
     }
     if (read_size == -1) {
     	perror("recv failed");
@@ -106,6 +119,17 @@ void *handleGUI(void * paramsd) {
     printf("client quit connection\n");
     pthread_exit(NULL);
     return 0;
+}
+
+void sendQt (char* cmd, int client) {
+	// printf("sendQt: %s \n", cmd);  fflush(stdout);
+	int rc;
+	rc = send(client, cmd, strlen(cmd) + 1, 0);
+	if (rc < 0) {
+		perror("cannot send data");
+		close(client);
+		exit(-1);
+	}
 }
 
 /* creates server socket communication */

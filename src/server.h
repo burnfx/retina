@@ -5,5 +5,6 @@
 	void *startServer(void *param);
 	void *handleGUI(void * paramsd);
 	void terminateSocket(int signum);
+	void sendQt(char* cmd, int client);
 
 #endif

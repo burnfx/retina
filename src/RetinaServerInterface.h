@@ -14,11 +14,20 @@ typedef struct{
 	bool isPending;
 } RequestType;
 
+typedef struct{
+	char cstr[40];
+	bool isPending;
+} ReplyType;
+
 class RetinaManager;
 
 class RetinaServerInterface {
 private:
 	bool pendingRequest;
+	bool pendingReply;
+
+	// playTime in ms
+	ReplyType playTime;
 
 	RetinaManager *retinaManager;
 	RequestType mode;
@@ -31,7 +40,10 @@ private:
 	RequestType viewport_Offset;
 	RequestType translateBack_Offset;
 	RequestType time;
+
+
 public:
+	int setReplyTime(std::string time);
 
 	int setRequestFile(char *filename);
 	int setRequestRedGreen(char *RedGreen);
@@ -45,6 +57,9 @@ public:
 	int setRequestTime(char *time);
 
 	bool hasRequests(){return pendingRequest;}
+	bool hasReplies() {return pendingReply;}
+
+	const char* getReplyTime();
 	int ExecuteRequests();
 
 	RetinaServerInterface(RetinaManager *retinaManager);

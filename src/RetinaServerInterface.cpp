@@ -7,12 +7,14 @@
 
 #include "RetinaServerInterface.h"
 #include "RetinaManager.h"
+#include <string.h>
 
 
 RetinaServerInterface::RetinaServerInterface(RetinaManager *retinaManager) {
 	this->retinaManager = retinaManager;
 
 	pendingRequest = false;
+	pendingReply = false;
 	control.isPending = false;
 	filename.isPending = false;
 	mode.isPending = false;
@@ -29,7 +31,18 @@ RetinaServerInterface::~RetinaServerInterface() {
 }
 
 
+int RetinaServerInterface::setReplyTime(std::string time) {
+	this->pendingReply = true;
+	this->playTime.isPending = true;
+	strcpy(this->playTime.cstr, time.c_str());
+	return this->playTime.isPending;
+}
 
+const char* RetinaServerInterface::getReplyTime() {
+	this->playTime.isPending = false;
+	this->pendingReply = false;
+	return this->playTime.cstr;
+}
 
 int RetinaServerInterface::setRequestFile(char *filename)
 {
