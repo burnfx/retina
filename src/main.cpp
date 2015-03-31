@@ -52,8 +52,9 @@ int main(int argc, char *argv[]) {
 	pthread_create(&srv, 0, startServer, &server);
 	pthread_detach(srv);
 
-	retInterface = new RetinaServerInterface(retinaManager);
+
 	retinaManager = new RetinaManager();
+	retInterface = new RetinaServerInterface(retinaManager);
 	retinaManager->Initialize(false, retInterface);
 
 
