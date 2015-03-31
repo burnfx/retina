@@ -446,7 +446,7 @@ int RetinaManager::initGL(ovrSizei clientSize, ovrSizei texSize, GLFWmonitor *mo
 
 // Initialization function. Needs to be called after instantiating the object.
 // The object can be re-initialized at different positions in code
-int RetinaManager::Initialize(int initModeViaKeyboard) {
+int RetinaManager::Initialize(int initModeViaKeyboard, RetinaServerInterface *retInterface) {
 	if (initModeViaKeyboard) {
 		int nTries = 0;
 		printf("Please choose the mode: \n"
@@ -469,7 +469,8 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 				"Initialized with mode " << ERROR_MODE << ",because boolean initViaKeyboard was set to false in init");
 		this->setMode(ERROR_MODE);
 	}
-
+	// ADDED
+	this->pRetInterface = retInterface;
 	// ********************* Initialize OVR ******************************
 	// Initializes LibOVR.
 	ovr_Initialize();
@@ -614,19 +615,19 @@ void RetinaManager::TerminateWindow() {
 // follow with "_left.txt" and "_right.txt" in order to work properly. e.g. file "X" will must actually be "X_left.txt" and "X_right.txt"
 void RetinaManager::KeyControl() {
 
-	if (glfwGetKey(this->pWindow, GLFW_KEY_UP) == GLFW_PRESS) {
+	if (glfwGetKey(this->pWindow, GLFW_KEY_I) == GLFW_PRESS) {
 		this->paramManager.incTranslateBackOffset();
 	}
 
-	if (glfwGetKey(this->pWindow, GLFW_KEY_DOWN) == GLFW_PRESS) {
+	if (glfwGetKey(this->pWindow, GLFW_KEY_K) == GLFW_PRESS) {
 		this->paramManager.decTranslateBackOffset();
 	}
 
-	if (glfwGetKey(this->pWindow, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+	if (glfwGetKey(this->pWindow, GLFW_KEY_L) == GLFW_PRESS) {
 		this->paramManager.decViewportOffset();
 	}
 
-	if (glfwGetKey(this->pWindow, GLFW_KEY_LEFT) == GLFW_PRESS) {
+	if (glfwGetKey(this->pWindow, GLFW_KEY_J) == GLFW_PRESS) {
 		this->paramManager.incViewportOffset();
 	}
 
@@ -689,6 +690,9 @@ void RetinaManager::KeyControl() {
 	if (glfwGetKey(this->pWindow, GLFW_KEY_T) == GLFW_PRESS && getOldKeyState(GLFW_KEY_T) == GLFW_RELEASE) {
 		this->setFile("edvs");
 	}
+	if (glfwGetKey(this->pWindow, GLFW_KEY_R) == GLFW_PRESS && getOldKeyState(GLFW_KEY_R) == GLFW_RELEASE) {
+		this->setFile("black");
+	}
 
 	// atm, GLFW does not store input key values --> input key changes (edges) must be detect manually.
 	// --> Store key state manually
@@ -707,6 +711,7 @@ void RetinaManager::KeyControl() {
 	setKeyState(GLFW_KEY_O, glfwGetKey(this->pWindow, GLFW_KEY_O));
 
 	setKeyState(GLFW_KEY_T, glfwGetKey(this->pWindow, GLFW_KEY_T));
+	setKeyState(GLFW_KEY_R, glfwGetKey(this->pWindow, GLFW_KEY_R));
 }
 
 // This function changes the display colors either to black/grey/white or to red/grey/green
@@ -739,10 +744,15 @@ int RetinaManager::setFile(char *filename) {
 
 	strcpy(this->edvsFileName, filename);
 	// Cast from char * to string, then concatenating, then cast back to char* (yes, strcat would have also worked)
-	edvsFileNameS_left = (std::string) EDVS_DATA_FOLDER_NAME + (std::string) filename
-			+ (std::string) FILENAME_EXTENSION_LEFT;
-	edvsFileNameS_right = (std::string) EDVS_DATA_FOLDER_NAME + (std::string) filename
-			+ (std::string) FILENAME_EXTENSION_RIGHT;
+	if(strcmp(filename,"black") == 0){
+		edvsFileNameS_left = (std::string) filename + (std::string) FILENAME_EXTENSION_LEFT;
+		edvsFileNameS_right = (std::string) filename + (std::string) FILENAME_EXTENSION_RIGHT;
+	}else{
+		edvsFileNameS_left = (std::string) EDVS_DATA_FOLDER_NAME + (std::string) filename
+				+ (std::string) FILENAME_EXTENSION_LEFT;
+		edvsFileNameS_right = (std::string) EDVS_DATA_FOLDER_NAME + (std::string) filename
+				+ (std::string) FILENAME_EXTENSION_RIGHT;
+	}
 
 	edvsFileName_left = (char *) edvsFileNameS_left.c_str();
 	edvsFileName_right = (char *) edvsFileNameS_right.c_str();
@@ -871,7 +881,7 @@ int RetinaManager::tryToUseOculus() {
 
 
 		glfwDestroyWindow(this->pWindow);
-		this->Initialize(0);
+		this->Initialize(0,this->pRetInterface);
 
 	} else{
 		this->useOculus = false;
@@ -880,7 +890,7 @@ int RetinaManager::tryToUseOculus() {
 
 
 		glfwDestroyWindow(this->pWindow);
-		this->Initialize(0);
+		this->Initialize(0,this->pRetInterface);
 	}
 	this->setMode(2);
 	//sleep(3);
@@ -926,14 +936,17 @@ void RetinaManager::measureStartTime(){
 	s_start_time = mystream.str();
 	DEBUG_MSG(s_start_time);
 	// SEND TO GUI
+	retInterface->setReplyTime(s_start_time);
 }
+
 
 /*
 // This belongs to GUI. measureStartTime from core application will send a msg to GUI
 // --> Gui shall just store this measured time.
 // However, to ensure that this is working, GUI shall also measure own start time,
 // which must be always earlier than the start time of core app, and the difference may not be too big! (<1s)
-*/
+
+
 void RetinaManager::measureStartTimeInGui(){
 	unsigned long start_time = std::chrono::duration_cast<std::chrono::milliseconds> (chrono::system_clock::now().time_since_epoch()).count();
 	setStartTimeGui(start_time);
@@ -952,4 +965,4 @@ void RetinaManager::measureStopTime(){
 	}
 }
 
-
+*/

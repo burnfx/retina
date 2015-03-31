@@ -73,6 +73,8 @@ private:
 	GLFWwindow *pWindow;
 	RetinaControlType control;
 
+	RetinaServerInterface *pRetInterface;
+
 
 	void WriteEventsToFile(int eyeIndex);
 
@@ -85,7 +87,7 @@ private:
 	void writeEventsToFile(FILE * file, edvs_event_t* event, int eventNum);
 	double measureFPS();
 	void CreateEDVSGL();
-
+	void displayBlackBackground();
 public:
 	void renderOvrEyes();
 	void UpdateEvents();
@@ -95,7 +97,7 @@ public:
 	int setMode(int mode);
 	void TerminateWindow();
 	void render();
-	int Initialize(int initModeViaKeyboard);
+	int Initialize(int initModeViaKeyboard, RetinaServerInterface *retInterface);
 	int initGL(ovrSizei clientSize,ovrSizei texSize, GLFWmonitor *monitor);
 
 	void KeyControl();
