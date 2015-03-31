@@ -17,8 +17,6 @@
 int server;
 int client;
 
-
-
 /* handles incoming communication of GUI */
 void *handleGUI(void * paramsd) {
     client = *((int *)paramsd);
