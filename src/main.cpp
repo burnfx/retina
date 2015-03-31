@@ -52,9 +52,9 @@ int main(int argc, char *argv[]) {
 	pthread_create(&srv, 0, startServer, &server);
 	pthread_detach(srv);
 
-
+	retInterface = new RetinaServerInterface(retinaManager);
 	retinaManager = new RetinaManager();
-	retinaManager->Initialize(false);
+	retinaManager->Initialize(false, retInterface);
 
 
 	// ******Initialize eDVS *******
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
 	//TODO: fileState and fileAndWindowState ist übrig geblieben beim splitten des typedefs...
 	// passt so nicht, v.A. von der Namensgebung!
 
-	retInterface = new RetinaServerInterface(retinaManager);
+
 	while (1) {
 		retinaManager->KeyControl();
 		if (retInterface->hasRequests()){
