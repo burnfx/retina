@@ -823,6 +823,7 @@ void RetinaManager::setControl(char *control) {
 				this->control = Stop;
 			}
 		}
+		this->measureStartTime();
 	} else if (strcmp(control, PAUSE) == 0) {
 		this->control = Pause;
 	} else if (strcmp(control, STOP) == 0) {
@@ -915,12 +916,6 @@ FileAndWindowStateType RetinaManager::getFileState() {
 	return tempState;
 }
 
-void RetinaManager::setFirstFrame(int val){
-	this->firstFrame = val;
-}
-int RetinaManager::isFirstFrame(){
-	return this->firstFrame;
-}
 
 /* start_time is the time from the "epoch", in units specified by duration cast(milliseconds).
  *  This StartTime shall be measured JUST before the first frame.

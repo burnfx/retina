@@ -203,8 +203,7 @@ public:
 	float getTime(){
 		return this->recordPlayTime;
 	}
-	void setFirstFrame(int val);
-	int isFirstFrame();
+
 	void measureStartTime();
 
 	void destroyWindow(){glfwDestroyWindow(pWindow);}
