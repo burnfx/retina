@@ -15,12 +15,13 @@
 #define MAX_CMD 50
 
 int server;
+int client;
 
 
 
 /* handles incoming communication of GUI */
 void *handleGUI(void * paramsd) {
-    int client_local = *((int *)paramsd);
+    client = *((int *)paramsd);
 
     char line[MAX_MSG];
     char cmd[MAX_CMD];
@@ -31,13 +32,14 @@ void *handleGUI(void * paramsd) {
 
     /* read_size > 0 	== message received
      * read_size == 0 	== no message received */
-    while (	(read_size = recv(client_local , line , MAX_MSG , 0)) >= 0 ) {
+    while (	(read_size = recv(client , line , MAX_MSG , 0)) >= 0 ) {
         // check for command
         if (strncmp(line, "-", 1) == 0) {
-        	strcpy(reply, ack);
+        	// strcpy(reply, ack);
         	// printf("command + parameter: %s\n", line);
         	memset(cmd, 0, MAX_CMD);
         	memset(param, 0, MAX_CMD);
+        	memset(reply, 0, MAX_CMD);
         	// read command and parameter
         	if (sscanf(line, "%s %s", cmd, param) > 0) {
         		// searching for a valid command sent from the client
@@ -53,12 +55,16 @@ void *handleGUI(void * paramsd) {
         		}
         		else if (strcmp(cmd, "-control") == 0) {
         			retInterface->setRequestControl(param);
-        			while (1) {
-        				if (retInterface->hasReplies()) {
-        					break;
-        				}
+        			if (strcmp(param, "play") == 0) {
+//        				while (1) {
+//        					if (retInterface->hasReplies()) {
+//        						break;
+//        					}
+//        				}
+        				// strcat(reply,retInterface->getReplyTime());
+        				// printf("%s", reply);
+        				//sendQt(reply, client);
         			}
-        			strcat(reply,retInterface->getReplyTime());
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
 				}
         		else if (strcmp(cmd, "-cDecay") == 0) {
@@ -115,7 +121,7 @@ void *handleGUI(void * paramsd) {
     if (read_size == -1) {
     	perror("recv failed");
     }
-    close(client_local);
+    close(client);
     printf("client quit connection\n");
     pthread_exit(NULL);
     return 0;

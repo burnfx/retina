@@ -2,6 +2,7 @@
 #define SERVER_H_
 
 	extern int server;
+	extern int client;
 	void *startServer(void *param);
 	void *handleGUI(void * paramsd);
 	void terminateSocket(int signum);
