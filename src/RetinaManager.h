@@ -28,7 +28,8 @@
 class RetinaManager {
 private:
 	int recordCounter = 0;
-	int recordPlayTime = 10; //in sec e.g: 5.5
+	int recordPlayTime = 10;
+	int firstFrame = 0;
 
 	bool useOculus;
 	bool isInitialized = false;
@@ -200,6 +201,12 @@ public:
 	float getTime(){
 		return this->recordPlayTime;
 	}
+	void setFirstFrame(int val);
+	int isFirstFrame();
+	void measureStartTime();
+
+	void destroyWindow(){glfwDestroyWindow(pWindow);}
 };
+
 
 #endif /* RETINAMANAGER_H_ */

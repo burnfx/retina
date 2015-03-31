@@ -55,6 +55,8 @@ int main(int argc, char *argv[]) {
 
 	retinaManager = new RetinaManager();
 	retinaManager->Initialize(false);
+
+
 	// ******Initialize eDVS *******
 	retinaManager->setMode(2);
 	retinaManager->setFile("somethingWrong");
@@ -75,6 +77,7 @@ int main(int argc, char *argv[]) {
 		if (retInterface->hasRequests()){
 			retInterface->ExecuteRequests();
 		}
+
 		// ************* File and Window ***************
 		fileAndWindowState = retinaManager->getFileAndWindowState();
 		if (fileAndWindowState == CloseWindowRequest) {
@@ -87,8 +90,8 @@ int main(int argc, char *argv[]) {
 					retinaManager->setControl(STOP);
 				}
 				retinaManager->UpdateEvents();
-
 				retinaManager->render();
+				if(retinaManager->isFirstFrame()){retinaManager->measureStartTime();}
 				break;
 			case Pause:
 				break;

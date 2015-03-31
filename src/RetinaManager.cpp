@@ -10,7 +10,13 @@
 #include <string.h>
 #include <stdio.h>
 #include <map>
+#include <chrono>
+#include <ctime>
 #include "main.h"
+#include <iostream>
+
+
+using namespace std;
 
 #define getSignForEye(x) ((x)==0 ? (1) : (-1))
 #define FPS 60
@@ -463,6 +469,7 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 				"Initialized with mode " << ERROR_MODE << ",because boolean initViaKeyboard was set to false in init");
 		this->setMode(ERROR_MODE);
 	}
+
 	// ********************* Initialize OVR ******************************
 	// Initializes LibOVR.
 	ovr_Initialize();
@@ -510,7 +517,6 @@ int RetinaManager::Initialize(int initModeViaKeyboard) {
 	} else {
 		monitor = NULL;
 	}
-
 	initGL(clientSize, texSize, monitor);
 	// ********************* /Initialize GL ****************************************
 
@@ -681,7 +687,7 @@ void RetinaManager::KeyControl() {
 		this->setMode(3);
 	}
 	if (glfwGetKey(this->pWindow, GLFW_KEY_T) == GLFW_PRESS && getOldKeyState(GLFW_KEY_T) == GLFW_RELEASE) {
-		this->setFile("1/e0d30l1m1r1h444");
+		this->setFile("edvs");
 	}
 
 	// atm, GLFW does not store input key values --> input key changes (edges) must be detect manually.
@@ -793,11 +799,12 @@ void RetinaManager::setControl(char *control) {
 	if (strcmp(control, PLAY) == 0) {
 		if (this->control == Stop) {
 			// Reinitialize eDVSGL objects (for next Play)
-			if (this->setFile(this->edvsFileName) == 1) {
+			if (this->setFile(this->edvsFileName) == 1 || this->paramManager.getMode() == 0) {
 				this->control = Play;
 			} else{
 				DEBUG_MSG("Couldn't start play, because setFile returned 0. Maybe wrong filename.");
 			}
+			firstFrame = 1;
 		} else{
 			if (this->edvsFile[0] != NULL && this->edvsFile[1] != NULL) {
 				this->control = Play;
@@ -845,6 +852,7 @@ int RetinaManager::tryToUseOculus() {
 	ovrSizei clientSize;
 
 	this->setControl(STOP);
+	//sleep(3);
 	if(!useOculus){
 		monitors = glfwGetMonitors(&count);
 		if (count > 1) { // This means, there is a second monitor
@@ -861,19 +869,22 @@ int RetinaManager::tryToUseOculus() {
 		clientSize.w = this->hmdDesc.Resolution.w;
 		clientSize.h = this->hmdDesc.Resolution.h;
 
-		//FIXME: The next 2 lines work "sometimes", e.g. in 90% of times. Why not always? Couldn't find it out yet.
+
 		glfwDestroyWindow(this->pWindow);
 		this->Initialize(0);
+
 	} else{
 		this->useOculus = false;
 		clientSize.w = this->hmdDesc.Resolution.w;
 		clientSize.h = this->hmdDesc.Resolution.h;
 
-		//FIXME: The next 2 lines work "sometimes", e.g. in 90% of times. Why not always? Couldn't find it out yet.
+
 		glfwDestroyWindow(this->pWindow);
 		this->Initialize(0);
 	}
 	this->setMode(2);
+	//sleep(3);
+	//this->setIdle(3);
 	return this->useOculus;
 }
 
@@ -893,3 +904,52 @@ FileAndWindowStateType RetinaManager::getFileState() {
 
 	return tempState;
 }
+
+void RetinaManager::setFirstFrame(int val){
+	this->firstFrame = val;
+}
+int RetinaManager::isFirstFrame(){
+	return this->firstFrame;
+}
+
+/* start_time is the time from the "epoch", in units specified by duration cast(milliseconds).
+ *  This StartTime shall be measured JUST before the first frame.
+ *  The StopTime shall be measured when the subject clicks for a decision. --> Is this measured immediately in GUI?!
+ *  TimeForDecisionInMilliseconds = StopTime - StartTime;
+ * */
+void RetinaManager::measureStartTime(){
+	string s_start_time;
+	stringstream mystream;
+	this->firstFrame = 0;
+	unsigned long start_time = std::chrono::duration_cast<std::chrono::milliseconds> (chrono::system_clock::now().time_since_epoch()).count();
+	mystream << start_time;
+	s_start_time = mystream.str();
+	DEBUG_MSG(s_start_time);
+	// SEND TO GUI
+}
+
+/*
+// This belongs to GUI. measureStartTime from core application will send a msg to GUI
+// --> Gui shall just store this measured time.
+// However, to ensure that this is working, GUI shall also measure own start time,
+// which must be always earlier than the start time of core app, and the difference may not be too big! (<1s)
+*/
+void RetinaManager::measureStartTimeInGui(){
+	unsigned long start_time = std::chrono::duration_cast<std::chrono::milliseconds> (chrono::system_clock::now().time_since_epoch()).count();
+	setStartTimeGui(start_time);
+}
+
+void RetinaManager::measureStopTime(){
+	unsigned long start_time = getStartTime(); //Must be implemented
+	unsigned long start_time_GUI = getStartTimeGui();
+	unsigned long stop_time = std::chrono::duration_cast<std::chrono::milliseconds> (chrono::system_clock::now().time_since_epoch()).count();
+	if(start_time - start_time_GUI < 1000){
+		//Something is wrong. Cannot use this timestamp!
+		SetTimeForDecision(0);
+	} else{
+		unsinged long timeForDecision = stop_time - start_time
+		SetTimeForDecision(timeForDecision);
+	}
+}
+
+
