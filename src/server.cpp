@@ -33,11 +33,11 @@ void *handleGUI(void * paramsd) {
     while (	(read_size = recv(client , line , MAX_MSG , 0)) >= 0 ) {
         // check for command
         if (strncmp(line, "-", 1) == 0) {
-        	// strcpy(reply, ack);
+        	memset(reply, 0, MAX_CMD);
+        	strcpy(reply, ack);
         	// printf("command + parameter: %s\n", line);
         	memset(cmd, 0, MAX_CMD);
         	memset(param, 0, MAX_CMD);
-        	memset(reply, 0, MAX_CMD);
         	// read command and parameter
         	if (sscanf(line, "%s %s", cmd, param) > 0) {
         		// searching for a valid command sent from the client
@@ -54,14 +54,13 @@ void *handleGUI(void * paramsd) {
         		else if (strcmp(cmd, "-control") == 0) {
         			retInterface->setRequestControl(param);
         			if (strcmp(param, "play") == 0) {
-//        				while (1) {
-//        					if (retInterface->hasReplies()) {
-//        						break;
-//        					}
-//        				}
-        				// strcat(reply,retInterface->getReplyTime());
-        				// printf("%s", reply);
-        				//sendQt(reply, client);
+        				while (1) {
+        					if (retInterface->hasReplies()) {
+        						break;
+        					}
+        				}
+        				strcat(reply,retInterface->getReplyTime());
+        				sendQt(reply, client);
         			}
 					printf("command received: %s\n", cmd); printf("parameter: %s\n", param); fflush(stdout);
 				}
@@ -106,7 +105,7 @@ void *handleGUI(void * paramsd) {
 				}
 
         	} else {
-        		printf("sscanf failed");
+        		printf("sscanf failed"); fflush(stdout);
         	}
         } else {
         	printf("wrong usage: %s. please use \"-setting value\" e.g. \"-mode 2\"",line);
