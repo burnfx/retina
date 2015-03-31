@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
 				}
 				retinaManager->UpdateEvents();
 				retinaManager->render();
-				if(retinaManager->isFirstFrame()){retinaManager->measureStartTime();}
+				//if(retinaManager->isFirstFrame()){retinaManager->measureStartTime();}
 				break;
 			case Pause:
 				break;
