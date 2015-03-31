@@ -14,7 +14,7 @@
 #include <ctime>
 #include "main.h"
 #include <iostream>
-
+#include "RetinaServerInterface.h"
 
 using namespace std;
 
