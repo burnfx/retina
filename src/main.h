@@ -16,7 +16,7 @@
 
 //#define RECORD_DURATION 10 //sec
 #define DEFAULT_MODE 2
-#define OCULUS_DK_VERSION_DEBUG 2
+#define OCULUS_DK_VERSION_DEBUG 1
 
 
 

@@ -29,7 +29,7 @@ class RetinaManager {
 private:
 	int recordCounter = 0;
 	int recordPlayTime = 10;
-	int firstFrame = 0;
+	std::string s_start_time;
 
 	bool useOculus;
 	bool isInitialized = false;

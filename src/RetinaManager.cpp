@@ -471,6 +471,7 @@ int RetinaManager::Initialize(int initModeViaKeyboard, RetinaServerInterface *re
 	}
 	// ADDED
 	this->pRetInterface = retInterface;
+	this->s_start_time = "0";
 	// ********************* Initialize OVR ******************************
 	// Initializes LibOVR.
 	ovr_Initialize();
@@ -814,7 +815,6 @@ void RetinaManager::setControl(char *control) {
 			} else{
 				DEBUG_MSG("Couldn't start play, because setFile returned 0. Maybe wrong filename.");
 			}
-			firstFrame = 1;
 		} else{
 			if (this->edvsFile[0] != NULL && this->edvsFile[1] != NULL) {
 				this->control = Play;
@@ -923,15 +923,19 @@ FileAndWindowStateType RetinaManager::getFileState() {
  *  TimeForDecisionInMilliseconds = StopTime - StartTime;
  * */
 void RetinaManager::measureStartTime(){
-	string s_start_time;
 	stringstream mystream;
-	this->firstFrame = 0;
 	unsigned long start_time = std::chrono::duration_cast<std::chrono::milliseconds> (chrono::system_clock::now().time_since_epoch()).count();
 	mystream << start_time;
-	s_start_time = mystream.str();
-	DEBUG_MSG(s_start_time);
+
 	// SEND TO GUI
-	retInterface->setReplyTime(s_start_time);
+	if(strcmp(this->edvsFileName,"black") == 0){
+		// If play just black background, don't measure time again --> send the old timestamp from the last "real" file
+		retInterface->setReplyTime(this->s_start_time);
+	}else{
+		this->s_start_time = mystream.str();
+		retInterface->setReplyTime(this->s_start_time);
+	}
+	DEBUG_MSG(this->s_start_time);
 }
 
 
