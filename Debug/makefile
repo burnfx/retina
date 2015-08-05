@@ -46,7 +46,7 @@ all: retina
 retina: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
-	g++ -L"/home/richi-ubuntu/workspace/retina/LibOVR/Lib/Linux/Debug/x86_64" -L/usr/local/lib -L/usr/X11R6/lib -o "retina" $(OBJS) $(USER_OBJS) $(LIBS)
+	g++ -L"/home/ns/retina/retina/LibOVR/Lib/Linux/Debug/x86_64" -L/usr/local/lib -L/usr/X11R6/lib -o "retina" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

@@ -350,6 +350,7 @@ int RetinaManager::initGL(ovrSizei clientSize, ovrSizei texSize, GLFWmonitor *mo
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwSwapInterval(60);
 
 
 	if (this->isUsingOculus()) {
